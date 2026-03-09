@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "spring.application.data.mongodb.uri",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.application.data.mongodb.uri'"
+    },
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT secret key"
+    },
+    {
+      "name": "app.jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "JWT access token expiration in ms"
+    },
+    {
+      "name": "app.jwt.refreshExpiration",
+      "type": "java.lang.Long",
+      "description": "JWT refresh token expiration in ms"
+    },
+    {
+      "name": "data.mongodb.uri",
+      "type": "java.lang.String",
+      "description": "A description for 'data.mongodb.uri'"
+    }
+  ]
+}
