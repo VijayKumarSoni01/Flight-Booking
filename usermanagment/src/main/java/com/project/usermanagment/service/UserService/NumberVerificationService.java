@@ -1,7 +1,7 @@
 package com.project.usermanagment.service.UserService;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Random;
 
 import org.springframework.stereotype.Service;
 
@@ -27,23 +27,30 @@ public class NumberVerificationService {
     private final OtpProperties otpProperties;
 
     @PostConstruct
-public void initTwilio() {
+    public void initTwilio() {
 
-    log.info("Twilio initialized successfully");
+        Twilio.init(
+                twilioProps.getAccountSid(),
+                twilioProps.getAuthToken());
 
-    Twilio.init(
-            twilioProps.getAccountSid(),
-            twilioProps.getAuthToken());
-}
+        log.info("Twilio initialized successfully");
+    }
 
     public void sendOtp(String email) {
 
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (Boolean.TRUE.equals(user.isPhoneVerified())) {
+        if (user.isPhoneVerified()) {
             throw new IllegalStateException(
                     "Phone number already verified");
+        }
+
+        if (user.getPhoneNumber() == null ||
+                user.getPhoneNumber().isBlank()) {
+
+            throw new IllegalStateException(
+                    "Phone number not found");
         }
 
         String otp = generateOtp();
@@ -69,7 +76,7 @@ public void initTwilio() {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (Boolean.TRUE.equals(user.isPhoneVerified())) {
+        if (user.isPhoneVerified()) {
             throw new IllegalStateException(
                     "Phone number already verified");
         }
@@ -81,9 +88,14 @@ public void initTwilio() {
                     "OTP has expired");
         }
 
-        if (!user.getPhoneOtp().equals(otp.trim())) {
-            throw new IllegalArgumentException(
-                    "Invalid OTP");
+        if (otp == null || otp.isBlank()) {
+            throw new IllegalArgumentException("OTP is required");
+        }
+
+        if (user.getPhoneOtp() == null ||
+                !user.getPhoneOtp().equals(otp.trim())) {
+
+            throw new IllegalArgumentException("Invalid OTP");
         }
 
         user.setPhoneVerified(true);
@@ -95,32 +107,35 @@ public void initTwilio() {
         log.info("Phone verified for user {}", user.getEmail());
     }
 
+    private void sendSms(String toPhone, String messageBody) {
+
+        try {
+
+            Message.creator(
+                    new PhoneNumber(toPhone),
+                    new PhoneNumber(twilioProps.getPhoneNumber()),
+                    messageBody)
+                    .create();
+
+        } catch (Exception e) {
+
+            log.error(
+                    "Failed to send SMS to {}",
+                    toPhone,
+                    e);
+
+            throw new RuntimeException(
+                    "Twilio Error: " + e.getMessage());
+        }
+    }
+
     public void resendOtp(String email) {
         sendOtp(email);
     }
 
-    private void sendSms(String toPhone, String messageBody) {
-
-    try {
-
-        Message.creator(
-                new PhoneNumber(toPhone),
-                new PhoneNumber(twilioProps.getPhoneNumber()),
-                messageBody
-        ).create();
-
-    } catch (Exception e) {
-
-        e.printStackTrace();
-
-        throw new RuntimeException(
-                "Twilio Error: " + e.getMessage());
-    }
-}
-
     private String generateOtp() {
 
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
 
         int min = (int) Math.pow(
                 10,
