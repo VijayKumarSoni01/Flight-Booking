@@ -146,6 +146,13 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean phoneVerified = false;
 
+    @JsonIgnore
+    @Column(length = 6)
+    private String phoneOtp;
+
+    @JsonIgnore
+    private LocalDateTime otpExpiry;
+
     @Builder.Default
     private boolean emailVerified = false;
 
