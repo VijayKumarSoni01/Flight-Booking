@@ -1,16 +1,28 @@
 {
   "properties": [
     {
-      "name": "app.jwt.secret-key",
+      "name": "twilio.account-sid",
       "type": "java.lang.String"
     },
     {
-      "name": "app.jwt.expiration-time",
-      "type": "java.lang.Long"
+      "name": "twilio.auth-token",
+      "type": "java.lang.String"
     },
     {
-      "name": "app.jwt.refresh-expiration-time",
-      "type": "java.lang.Long"
+      "name": "twilio.phone-number",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "otp.length",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "otp.expiry-minutes",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "otp.max-attempts",
+      "type": "java.lang.Integer"
     }
   ]
 }

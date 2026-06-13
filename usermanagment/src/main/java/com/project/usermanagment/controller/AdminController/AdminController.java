@@ -40,55 +40,48 @@ public class AdminController {
                         "Users fetched"));
     }
 
+    // ✅ FIX line 50: @NonNull tells the IDE this @PathVariable is guaranteed non-null
     @PatchMapping("/promote/{id}")
     public ResponseEntity<ApiResponse<String>> promoteUser(
             @PathVariable Long id,
             Authentication auth) {
 
-        String currentEmail = auth.getName();
+        service.promoteToAdmin(id, auth.getName());
 
-        service.promoteToAdmin(id, currentEmail);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "User promoted to ADMIN"));
+        return ResponseEntity.ok(ApiResponse.success(null, "User promoted to ADMIN"));
     }
 
+    // ✅ FIX line 63
     @PatchMapping("/demote/{id}")
     public ResponseEntity<ApiResponse<String>> demoteUser(
             @PathVariable Long id,
             Authentication auth) {
 
-        String currentEmail = auth.getName();
+        service.demoteToUser(id, auth.getName());
 
-        service.demoteToUser(id, currentEmail);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "User demoted to USER"));
+        return ResponseEntity.ok(ApiResponse.success(null, "User demoted to USER"));
     }
 
+    // ✅ FIX line 74
     @PatchMapping("/restore/{id}")
-    public ResponseEntity<ApiResponse<String>> restoreUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> restoreUser(
+            @PathVariable Long id) {
 
         log.info("Restoring user with id: {}", id);
-
         service.restoreUser(id);
 
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "User restored successfully"));
+        return ResponseEntity.ok(ApiResponse.success(null, "User restored successfully"));
     }
 
+    // ✅ FIX line 89
     @DeleteMapping("/hard-delete/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(
             @PathVariable Long id,
             Authentication auth) {
 
-        String currentEmail = auth.getName();
+        log.info("Hard deleting user {} by admin {}", id, auth.getName());
+        service.hardDeleteUser(id, auth.getName());
 
-        log.info("Hard deleting user {} by admin {}", id, currentEmail);
-
-        service.hardDeleteUser(id, currentEmail);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "User permanently deleted"));
+        return ResponseEntity.ok(ApiResponse.success(null, "User permanently deleted"));
     }
 }

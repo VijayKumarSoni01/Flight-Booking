@@ -53,7 +53,7 @@ public class RegLogTest {
         System.out.println("REGISTER SUCCESS: " + registerResponse);
 
         UserAuthResponse loginResponse =
-                userService.login("9876543210", "Password123");
+                userService.login("9876543210", "Password123","0:0:0:0:1");
 
         System.out.println("LOGIN SUCCESS: " + loginResponse);
 

@@ -40,28 +40,28 @@ public class JwtUtil {
     }
 
     private String buildToken(Map<String, Object> extraClaims,
-        UserDetails userDetails,
-        long expirationMs) {
+            UserDetails userDetails,
+            long expirationMs) {
 
-    long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-    Date issued = new Date(now);
-    Date expiry = new Date(now + expirationMs);
+        Date issued = new Date(now);
+        Date expiry = new Date(now + expirationMs);
 
-    ZonedDateTime istIssued = issued.toInstant().atZone(ZoneId.of("Asia/Kolkata"));
-    ZonedDateTime istExpiry = expiry.toInstant().atZone(ZoneId.of("Asia/Kolkata"));
+        ZonedDateTime istIssued = issued.toInstant().atZone(ZoneId.of("Asia/Kolkata"));
+        ZonedDateTime istExpiry = expiry.toInstant().atZone(ZoneId.of("Asia/Kolkata"));
 
-    System.out.println("Issued (IST): " + istIssued);
-    System.out.println("Expiry (IST): " + istExpiry);
+        System.out.println("Issued (IST): " + istIssued);
+        System.out.println("Expiry (IST): " + istExpiry);
 
-    return Jwts.builder()
-            .setClaims(extraClaims)
-            .setSubject(userDetails.getUsername())
-            .setIssuedAt(issued)
-            .setExpiration(expiry)
-            .signWith(getSigningKey())
-            .compact();
-}
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(issued)
+                .expiration(expiry)
+                .signWith(getSigningKey())
+                .compact();
+    }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractSubject(token);
@@ -85,11 +85,11 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getSigningKey() {

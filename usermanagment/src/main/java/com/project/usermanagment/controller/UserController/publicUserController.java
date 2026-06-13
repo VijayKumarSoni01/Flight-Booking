@@ -16,6 +16,7 @@ import com.project.usermanagment.service.UserService.PublicUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +36,22 @@ public class publicUserController {
         @PostMapping("/login")
         @Operation(summary = "User Login", description = "Login using username/email/phone", tags = { "Public APIs" })
         public ResponseEntity<ApiResponse<UserAuthResponse>> login(
-                        @Valid @RequestBody LoginRequest loginRequest) {
+                        @Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
 
                 log.info("Login attempt for: {}", loginRequest.getIdentifier());
 
+                String ipAddress = request.getHeader("X-Forwarded-For");
+
+                if (ipAddress != null && !ipAddress.isBlank()) {
+                        ipAddress = ipAddress.split(",")[0].trim();
+                } else {
+                        ipAddress = request.getRemoteAddr();
+                }
+
                 UserAuthResponse authResponse = userService.login(
                                 loginRequest.getIdentifier(),
-                                loginRequest.getPassword());
+                                loginRequest.getPassword(),
+                                ipAddress);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(authResponse, "User logged in successfully"));

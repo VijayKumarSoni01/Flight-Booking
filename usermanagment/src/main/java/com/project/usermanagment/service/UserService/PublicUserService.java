@@ -27,7 +27,7 @@ public class PublicUserService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
-    public UserAuthResponse login(String identifier, String password) {
+    public UserAuthResponse login(String identifier, String password, String ipAddress) {
 
         String login = identifier.trim().toLowerCase();
 
@@ -52,7 +52,14 @@ public class PublicUserService {
         }
 
         user.setLastLogin(LocalDateTime.now());
+        user.setLastLoginIp(ipAddress);
         user.setLoginCount(user.getLoginCount() + 1);
+
+        log.info(
+                "Updating login info | User={} | Count={} | IP={}",
+                user.getEmail(),
+                user.getLoginCount(),
+                ipAddress);
 
         userRepository.save(user);
 
@@ -70,7 +77,7 @@ public class PublicUserService {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .token(token)
+                .accessToken(token)
                 .refreshToken(refreshToken)
                 .build();
     }
@@ -139,7 +146,7 @@ public class PublicUserService {
                 .email(savedUser.getEmail())
                 .firstName(savedUser.getFirstName())
                 .lastName(savedUser.getLastName())
-                .token(token)
+                .accessToken(token)
                 .refreshToken(refreshToken)
                 .build();
     }
