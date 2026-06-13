@@ -29,9 +29,7 @@ public class NumberVerificationService {
     @PostConstruct
 public void initTwilio() {
 
-    System.out.println("SID = " + twilioProps.getAccountSid());
-    System.out.println("TOKEN = " + twilioProps.getAuthToken());
-    System.out.println("PHONE = " + twilioProps.getPhoneNumber());
+    log.info("Twilio initialized successfully");
 
     Twilio.init(
             twilioProps.getAccountSid(),
