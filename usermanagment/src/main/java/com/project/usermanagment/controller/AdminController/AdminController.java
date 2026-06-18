@@ -2,86 +2,123 @@ package com.project.usermanagment.controller.AdminController;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.project.usermanagment.dtos.UserDTO.securitydto.ApiResponse;
 import com.project.usermanagment.entity.User;
 import com.project.usermanagment.enumFolder.Role;
 import com.project.usermanagment.service.AdminService.AdminService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
-@Slf4j
 public class AdminController {
 
-    private final AdminService service;
+    private final AdminService adminService;
 
-    @GetMapping("/users")
+    @Operation(summary = "Get Users", description = "Get users with pagination, search, role filter and sorting", tags = {
+            "Admin APIs" })
+    @GetMapping
     public ResponseEntity<ApiResponse<Page<User>>> getUsers(
+
             @RequestParam(required = false) String search,
+
             @RequestParam(required = false) Role role,
+
             @RequestParam(defaultValue = "0") int page,
+
             @RequestParam(defaultValue = "10") int size,
+
             @RequestParam(defaultValue = "id") String sortBy,
+
             @RequestParam(defaultValue = "desc") String dir) {
 
-        log.info("Fetching users | search={} role={} page={} size={}", search, role, page, size);
+        Page<User> users = adminService.getUsers(
+                search,
+                role,
+                page,
+                size,
+                sortBy,
+                dir);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        service.getUsers(search, role, page, size, sortBy, dir),
-                        "Users fetched"));
+                        users,
+                        "Users fetched successfully"));
     }
 
-    // ✅ FIX line 50: @NonNull tells the IDE this @PathVariable is guaranteed non-null
-    @PatchMapping("/promote/{id}")
+    @Operation(summary = "Promote User", description = "Grant ADMIN role to a user", tags = { "Admin APIs" })
+    @PatchMapping("/{id}/promote")
     public ResponseEntity<ApiResponse<String>> promoteUser(
+
             @PathVariable Long id,
-            Authentication auth) {
+            Authentication authentication) {
 
-        service.promoteToAdmin(id, auth.getName());
+        adminService.promoteToAdmin(
+                id,
+                authentication.getName());
 
-        return ResponseEntity.ok(ApiResponse.success(null, "User promoted to ADMIN"));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "User promoted to ADMIN successfully"));
     }
 
-    // ✅ FIX line 63
-    @PatchMapping("/demote/{id}")
+    @Operation(summary = "Demote Admin", description = "Remove ADMIN role from a user", tags = { "Admin APIs" })
+    @PatchMapping("/{id}/demote")
     public ResponseEntity<ApiResponse<String>> demoteUser(
+
             @PathVariable Long id,
-            Authentication auth) {
+            Authentication authentication) {
 
-        service.demoteToUser(id, auth.getName());
+        adminService.demoteToUser(
+                id,
+                authentication.getName());
 
-        return ResponseEntity.ok(ApiResponse.success(null, "User demoted to USER"));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "ADMIN role removed successfully"));
     }
 
-    // ✅ FIX line 74
-    @PatchMapping("/restore/{id}")
+    @Operation(summary = "Restore User", description = "Restore a deactivated user account", tags = { "Admin APIs" })
+    @PatchMapping("/{id}/restore")
     public ResponseEntity<ApiResponse<String>> restoreUser(
             @PathVariable Long id) {
 
-        log.info("Restoring user with id: {}", id);
-        service.restoreUser(id);
+        adminService.restoreUser(id);
 
-        return ResponseEntity.ok(ApiResponse.success(null, "User restored successfully"));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "User restored successfully"));
     }
 
-    // ✅ FIX line 89
-    @DeleteMapping("/hard-delete/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteUser(
+    @Operation(summary = "Hard Delete User", description = "Permanently delete a deactivated user", tags = {
+            "Admin APIs" })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> hardDeleteUser(
+
             @PathVariable Long id,
-            Authentication auth) {
+            Authentication authentication) {
 
-        log.info("Hard deleting user {} by admin {}", id, auth.getName());
-        service.hardDeleteUser(id, auth.getName());
+        adminService.hardDeleteUser(
+                id,
+                authentication.getName());
 
-        return ResponseEntity.ok(ApiResponse.success(null, "User permanently deleted"));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "User deleted permanently"));
     }
 }

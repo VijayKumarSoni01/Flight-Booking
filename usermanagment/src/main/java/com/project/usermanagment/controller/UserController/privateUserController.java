@@ -2,7 +2,6 @@ package com.project.usermanagment.controller.UserController;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-// import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,8 +15,11 @@ import com.project.usermanagment.dtos.UserDTO.OtherDTO.VerifyOtpDTO;
 import com.project.usermanagment.dtos.UserDTO.passwordDTO.ChangePassRequest;
 import com.project.usermanagment.dtos.UserDTO.securitydto.ApiResponse;
 import com.project.usermanagment.entity.User;
-import com.project.usermanagment.service.UserService.NumberVerificationService;
 import com.project.usermanagment.service.UserService.PrivateUserService;
+import com.project.usermanagment.service.UserService.Verification.EmailVerificationService;
+import com.project.usermanagment.service.UserService.Verification.NumberVerificationService;
+
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,73 +30,115 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class privateUserController {
 
-    private final PrivateUserService userService;
-    private final NumberVerificationService numberVerificationService;
-    // private final UserDetailsService userDetailsService;
+        private final PrivateUserService userService;
+        private final NumberVerificationService numberVerificationService;
+        private final EmailVerificationService emailVerificationService;
 
-    @PutMapping("/update-profile")
-    public ResponseEntity<ApiResponse<User>> updateProfile(@Valid @RequestBody UpdateDTO update,
-            Authentication authentication) {
-        String email = authentication.getName();
+        @PutMapping("/update-profile")
+        @Operation(summary = "Update Profile", description = "Update the logged-in user's profile information", tags = {
+                        "Private APIs" })
+        public ResponseEntity<ApiResponse<User>> updateProfile(@Valid @RequestBody UpdateDTO update,
+                        Authentication authentication) {
+                String email = authentication.getName();
 
-        log.info("Updating profile for user: {}", email);
+                log.info("Updating profile for user: {}", email);
 
-        User updatedUser = userService.updateProfile(email, update);
-        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));
-    }
+                User updatedUser = userService.updateProfile(email, update);
+                return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));
+        }
 
-    @PatchMapping("/change-password")
-    public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePassRequest req,
-            Authentication auth) {
-        String email = auth.getName();
+        @PatchMapping("/change-password")
+        @Operation(summary = "Change Password", description = """
+                        Change password for the logged-in user.
 
-        log.info("Password change request for user: {}", email);
-        log.info("Password change request details: {}", req);
-        userService.changePassword(email, req);
-        return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
-    }
+                        Request Body:
+                        {
+                          "currentPassword": "OldPass@123",
+                          "newPassword": "NewPass@123"
+                        }
+                        """, tags = { "Private APIs" })
+        public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePassRequest req,
+                        Authentication auth) {
+                String email = auth.getName();
 
-    @DeleteMapping
-    public ResponseEntity<ApiResponse<String>> deleteUser(Authentication auth) {
+                log.info("Password change request for user: {}", email);
+                log.info("Password change request details: {}", req);
+                userService.changePassword(email, req);
+                return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
+        }
 
-        String email = auth.getName();
+        @DeleteMapping
+        @Operation(summary = "Deactivate Account", description = "Deactivate the currently logged-in user account", tags = {
+                        "Private APIs" })
+        public ResponseEntity<ApiResponse<String>> deleteUser(Authentication auth) {
 
-        log.info("User account deactivated for email: {}", email);
-        userService.deactivateCurrentUser(email);
+                String email = auth.getName();
 
-        return ResponseEntity.ok(
-                ApiResponse.success(null, "User Deactivated Successfully"));
-    }
+                log.info("User account deactivated for email: {}", email);
+                userService.deactivateCurrentUser(email);
 
-    @PostMapping("/send-phone-otp")
-    public ResponseEntity<ApiResponse<String>> sendPhoneOtp(
-            Authentication authentication) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(null, "User Deactivated Successfully"));
+        }
 
-        String email = authentication.getName();
+        @PostMapping("/send-phone-otp")
+        @Operation(summary = "Send Phone Verification OTP", description = "Send OTP to the logged-in user's phone number", tags = {
+                        "Private APIs" })
+        public ResponseEntity<ApiResponse<String>> sendPhoneOtp(
+                        Authentication authentication) {
 
-        numberVerificationService.sendOtp(email);
+                String email = authentication.getName();
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        null,
-                        "OTP sent successfully"));
-    }
+                numberVerificationService.sendOtp(email);
 
-    @PostMapping("/verify-phone-otp")
-    public ResponseEntity<ApiResponse<String>> verifyPhoneOtp(
-            @RequestBody VerifyOtpDTO request,
-            Authentication authentication) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                null,
+                                                "OTP sent successfully"));
+        }
 
-        String email = authentication.getName();
+        @PostMapping("/verify-phone-otp")
+        @Operation(summary = "Verify Phone OTP", description = """
+                        Verify phone number using OTP.
 
-        numberVerificationService.verifyOtp(
-                email,
-                request.getOtp());
+                        Example:
+                        {
+                          "otp": "123456"
+                        }
+                        """, tags = { "Private APIs" })
+        public ResponseEntity<ApiResponse<String>> verifyPhoneOtp(
+                        @RequestBody VerifyOtpDTO request,
+                        Authentication authentication) {
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        null,
-                        "Phone verified successfully"));
-    }
+                String email = authentication.getName();
+
+                numberVerificationService.verifyOtp(
+                                email,
+                                request.getOtp());
+
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                null,
+                                                "Phone verified successfully"));
+        }
+
+        // ---------------------Email Verification--------------------------
+
+        @PostMapping("/resend-my-verification-email")
+        @Operation(summary = "Resend Verification Email", description = "Resend email verification link to the logged-in user", tags = {
+                        "Private APIs" })
+        public ResponseEntity<ApiResponse<String>> resendMyVerificationEmail(
+                        Authentication authentication) {
+
+                String email = authentication.getName();
+
+                emailVerificationService
+                                .resendVerificationEmail(email);
+
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                null,
+                                                "Verification email resent successfully"));
+        }
 
 }
