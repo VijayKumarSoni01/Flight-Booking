@@ -52,4 +52,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r = com.project.usermanagment.enumFolder.Role.ADMIN")
     long countAdmins();
+
+    Optional<User> findByEmailVerificationToken(String token);
+
+    Optional<User> findByPhoneNumber(String phoneNumber);
 }

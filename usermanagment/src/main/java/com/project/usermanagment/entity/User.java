@@ -157,6 +157,14 @@ public class User implements UserDetails {
     private boolean emailVerified = false;
 
     @JsonIgnore
+    @Column(name = "email_verification_token")
+    private String emailVerificationToken;
+
+    @JsonIgnore
+    @Column(name = "email_verification_token_expiry")
+    private LocalDateTime emailVerificationTokenExpiry;
+
+    @JsonIgnore
     @Column(length = 255)
     private String resetToken;
 
