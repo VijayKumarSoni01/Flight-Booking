@@ -23,7 +23,7 @@ public class PassengerService {
     private final PassengerRepository passengerRepository;
     private final UserRepository userRepository;
 
-    public PassengerResponseDTO addPassanger(String email, PassengerRequestDTO request) {
+    public PassengerResponseDTO addPassenger(String email, PassengerRequestDTO request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not Found"));
 

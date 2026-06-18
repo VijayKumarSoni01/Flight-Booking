@@ -10,8 +10,11 @@ import org.springframework.stereotype.Service;
 import com.project.usermanagment.dtos.UserDTO.registrationORlogin.RegistrationRequest;
 import com.project.usermanagment.dtos.UserDTO.securitydto.UserAuthResponse;
 import com.project.usermanagment.entity.User;
+import com.project.usermanagment.enumFolder.OtpType;
 import com.project.usermanagment.repository.UserRepository;
 import com.project.usermanagment.security.JwtUtil;
+import com.project.usermanagment.service.UserService.Verification.EmailVerificationService;
+import com.project.usermanagment.service.UserService.Verification.NumberVerificationService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +28,9 @@ public class PublicUserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final EmailService emailService;
+    private final EmailVerificationService emailService;
+    private final NumberVerificationService numberVerificationService;
+    private final OtpService otpService;
 
     public UserAuthResponse login(String identifier, String password, String ipAddress) {
 
@@ -132,6 +137,8 @@ public class PublicUserService {
 
         User savedUser = userRepository.save(user);
 
+        emailService.sendVerificationEmail(savedUser);
+
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(savedUser.getEmail())
                 .password(savedUser.getPassword())
@@ -151,52 +158,85 @@ public class PublicUserService {
                 .build();
     }
 
-    public void initiatePasswordReset(String email) {
+    public void initiatePasswordReset(
+            String identifier,
+            OtpType otpType) {
 
-        System.out.println("STEP 1: METHOD CALLED");
+        User user;
 
-        email = email.trim();
+        if (otpType == OtpType.EMAIL) {
 
-        User user = userRepository.findByEmail(email).orElse(null);
+            user = userRepository.findByEmail(identifier)
+                    .orElseThrow(
+                            () -> new RuntimeException("User not found"));
 
-        if (user == null) {
-            System.out.println("STEP 2: USER NOT FOUND");
-            return;
+            if (!user.isEmailVerified()) {
+
+                throw new RuntimeException(
+                        "Email is not verified");
+            }
+
+        } else {
+
+            user = userRepository.findByPhoneNumber(identifier)
+                    .orElseThrow(
+                            () -> new RuntimeException("User not found"));
+
+            if (!user.isPhoneVerified()) {
+
+                throw new RuntimeException(
+                        "Phone number is not verified");
+            }
         }
 
-        System.out.println("STEP 3: USER FOUND");
+        String otp = otpService.generateOtp();
 
-        String token = java.util.UUID.randomUUID().toString();
-
-        log.info("Password reset token for {}: {}", user.getEmail(), token);
-
-        user.setResetToken(token);
-        user.setResetTokenExpiry(java.time.LocalDateTime.now().plusMinutes(15));
+        user.setPhoneOtp(otp);
+        user.setOtpExpiry(
+                LocalDateTime.now().plusMinutes(10));
 
         userRepository.save(user);
 
-        System.out.println("STEP 4: CALLING EMAIL SERVICE");
+        if (otpType == OtpType.EMAIL) {
 
-        try {
-            emailService.sendResetPasswordEmail(user.getEmail(), token);
-        } catch (Exception e) {
-            System.out.println("EMAIL FAILED: " + e.getMessage());
+            emailService.sendOtpEmail(
+                    user.getEmail(),
+                    otp);
+
+        } else {
+
+            numberVerificationService.sendPasswordResetOtp(
+                    user.getPhoneNumber(),
+                    otp);
         }
     }
 
-    public void resetPassword(String token, String newPassword) {
+    public void resetPassword(
+            String email,
+            String otp,
+            String newPassword) {
 
-        User user = userRepository.findByResetToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(
+                        () -> new RuntimeException("User not found"));
 
-        if (user.getResetTokenExpiry() == null ||
-                user.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
+        if (user.getOtpExpiry() == null ||
+                user.getOtpExpiry()
+                        .isBefore(LocalDateTime.now())) {
+
+            throw new RuntimeException("OTP expired");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setResetToken(null);
-        user.setResetTokenExpiry(null);
+        if (!otp.equals(user.getPhoneOtp())) {
+
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(newPassword));
+
+        user.setPhoneOtp(null);
+        user.setOtpExpiry(null);
 
         userRepository.save(user);
     }
@@ -278,5 +318,27 @@ public class PublicUserService {
 
         userRepository.deleteAll(users);
     }
+
+    // ---------------------Otp change password--------------------------
+    // private String generateOtp() {
+    // return String.valueOf(
+    // ThreadLocalRandom.current()
+    // .nextInt(100000, 999999));
+    // }
+
+    // public void sendResetOtp(String email) {
+
+    // User user = userRepository.findByEmail(email)
+    // .orElseThrow(() -> new RuntimeException("User not found"));
+
+    // String otp = generateOtp();
+
+    // user.setPhoneOtp(otp);
+    // user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+
+    // userRepository.save(user);
+
+    // emailService.sendOtpEmail(user.getEmail(), otp);
+    // }
 
 }
