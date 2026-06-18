@@ -1,3 +1,7 @@
+server:
+  address: 0.0.0.0
+  port: 8080
+
 spring:
   application:
     name: usermanagment
@@ -15,6 +19,18 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: ${BREVO_SMTP_HOST:smtp-relay.brevo.com}
+    port: ${BREVO_SMTP_PORT:587}
+    username: ${BREVO_SMTP_USER:test}
+    password: ${BREVO_SMTP_KEY:test}
+
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
     
 
 app:
@@ -22,6 +38,12 @@ app:
     secret-key: ${JWT_SECRET}
     expiration-time: ${JWT_EXPIRATION_TIME:1800000}
     refresh-expiration-time: ${JWT_REFRESH_EXPIRATION_TIME:604800000}
+
+  mail:
+    from-email: ${BREVO_FROM_EMAIL}
+    from-name: ${BREVO_FROM_NAME}
+    base-url: ${APP_BASE_URL}
+    verification-expiry-minutes: ${EMAIL_VERIFICATION_EXPIRY_MINUTES:15}
 
 logging:
   file:
