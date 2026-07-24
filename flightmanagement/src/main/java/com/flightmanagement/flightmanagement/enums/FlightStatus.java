@@ -1,10 +1,13 @@
 package com.flightmanagement.flightmanagement.enums;
 
 public enum FlightStatus {
+
     SCHEDULED,
     BOARDING,
-    DELAYED,
     DEPARTED,
-    ARRIVED,
-    CANCELLED
+    IN_AIR,
+    LANDED,
+    DELAYED,
+    CANCELLED,
+    DIVERTED
 }

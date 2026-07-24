@@ -4,15 +4,34 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 import com.flightmanagement.flightmanagement.enums.FlightStatus;
+import com.flightmanagement.flightmanagement.enums.FlightType;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "flights", indexes = {
-        @Index(name = "idx_route", columnList = "source,destination"),
-        @Index(name = "idx_departure", columnList = "departureTime")
+        @Index(name = "idx_flight_number", columnList = "flightNumber"),
+        @Index(name = "idx_departure_time", columnList = "departureTime"),
+        @Index(name = "idx_route", columnList = "origin_airport_id,destination_airport_id")
 })
 @Getter
 @Setter
@@ -25,84 +44,101 @@ public class Flight {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 10)
     private String flightNumber;
 
-    private String carrierCode;
-    private String airlineName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "airline_id", nullable = false)
+    private Airline airline;
 
-    @NotBlank
-    @Column(length = 3, nullable = false)
-    private String source;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "origin_airport_id", nullable = false)
+    private Airport originAirport;
 
-    @NotBlank
-    @Column(length = 3, nullable = false)
-    private String destination;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destination_airport_id", nullable = false)
+    private Airport destinationAirport;
 
-    @NotNull
-    private LocalDateTime departureTime;
-
-    @NotNull
-    private LocalDateTime arrivalTime;
-
-    private Long durationMinutes;
-
-    @Positive
-    private double price;
-
-    @Min(1)
-    private int totalSeats;
-
-    @Min(0)
-    private int availableSeats;
-
-    private String departureTerminal;
-    private String gate;
-
-    private String aircraftType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aircraft_id", nullable = false)
+    private Aircraft aircraft;
 
     @Enumerated(EnumType.STRING)
-    private FlightStatus status;
+    @Column(nullable = false)
+    private FlightType flightType;
 
-    @Version
-    private int version;
-
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
-    private boolean isActive = true;
+    private FlightStatus status = FlightStatus.SCHEDULED;
 
+    @Column(nullable = false)
+    private LocalDateTime departureTime;
+
+    @Column(nullable = false)
+    private LocalDateTime arrivalTime;
+
+    @Column(nullable = false)
+    private Integer durationMinutes;
+
+    @Column(length = 20)
+    private String departureTerminal;
+
+    @Column(length = 20)
+    private String arrivalTerminal;
+
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    @PreUpdate
-    public void normalize() {
-        if (source != null)
-            source = source.toUpperCase();
-        if (destination != null)
-            destination = destination.toUpperCase();
-    }
+    @Version
+    private Long version;
 
     @PrePersist
     public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        validateTimes();
 
-        if (this.availableSeats == 0) {
-            this.availableSeats = this.totalSeats;
-        }
+        LocalDateTime now = LocalDateTime.now();
 
-        if (this.durationMinutes == null && departureTime != null && arrivalTime != null) {
-            this.durationMinutes = Duration.between(departureTime, arrivalTime).toMinutes();
-        }
+        this.createdAt = now;
+        this.updatedAt = now;
 
-        if (this.status == null) {
-            this.status = FlightStatus.SCHEDULED;
-        }
+        this.durationMinutes = (int) Duration.between(
+                departureTime,
+                arrivalTime)
+                .toMinutes();
     }
 
     @PreUpdate
     public void onUpdate() {
+
+        validateTimes();
+
         this.updatedAt = LocalDateTime.now();
+
+        this.durationMinutes = (int) Duration.between(
+                departureTime,
+                arrivalTime)
+                .toMinutes();
+    }
+
+    private void validateTimes() {
+
+        if (arrivalTime.isBefore(departureTime)) {
+            throw new IllegalArgumentException(
+                    "Arrival time cannot be before departure time.");
+        }
+
+        if (arrivalTime.equals(departureTime)) {
+            throw new IllegalArgumentException(
+                    "Arrival time cannot be the same as departure time.");
+        }
+
+        if (departureTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "Departure time must be in the future.");
+        }
     }
 }

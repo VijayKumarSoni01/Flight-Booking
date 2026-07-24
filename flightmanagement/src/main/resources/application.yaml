@@ -1,6 +1,10 @@
+server:
+  address: 0.0.0.0
+  port: 8081
+
 spring:
   application:
-    name: usermanagment
+    name: flightmanagement
 
   datasource:
     url: jdbc:mysql://localhost:3306/flightserver
