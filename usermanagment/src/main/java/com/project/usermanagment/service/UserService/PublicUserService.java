@@ -137,6 +137,10 @@ public class PublicUserService {
 
         User savedUser = userRepository.save(user);
 
+        userRepository.flush();
+
+        System.out.println("Saved User ID = " + savedUser.getId());
+
         emailService.sendVerificationEmail(savedUser);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User

@@ -1,4 +1,14 @@
-.env.backup
+# VS Code
+.vscode/
+
+# Logs
 logs/
 *.log
-*.gz
+
+# Environment files
+.env
+.env.backup
+
+# OS files
+.DS_Store
+Thumbs.db

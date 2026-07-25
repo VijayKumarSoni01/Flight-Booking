@@ -7,7 +7,7 @@ spring:
     name: usermanagment
 
   datasource:
-    url: jdbc:mysql://localhost:3306/flightbooking
+    url: jdbc:mysql://mysql:3306/flightbooking
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,6 +19,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
+        
   mail:
     host: ${BREVO_SMTP_HOST:smtp-relay.brevo.com}
     port: ${BREVO_SMTP_PORT:587}
@@ -46,8 +48,13 @@ app:
     verification-expiry-minutes: ${EMAIL_VERIFICATION_EXPIRY_MINUTES:15}
 
 logging:
+  level:
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.orm.schema]": DEBUG
+    "[org.hibernate.tool.schema]": DEBUG
   file:
     name: logs/app.log
+
 
 twilio:
   account-sid: ${TWILIO_ACCOUNT_SID}

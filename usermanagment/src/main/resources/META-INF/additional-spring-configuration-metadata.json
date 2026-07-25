@@ -1,28 +1,69 @@
 {
   "properties": [
     {
+      "name": "app.jwt.secret-key",
+      "type": "java.lang.String",
+      "description": "Secret key used to sign JWT tokens."
+    },
+    {
+      "name": "app.jwt.expiration-time",
+      "type": "java.lang.Long",
+      "description": "JWT access token expiration time in milliseconds."
+    },
+    {
+      "name": "app.jwt.refresh-expiration-time",
+      "type": "java.lang.Long",
+      "description": "JWT refresh token expiration time in milliseconds."
+    },
+    {
+      "name": "app.mail.from-email",
+      "type": "java.lang.String",
+      "description": "Email address used as the sender for outgoing mail."
+    },
+    {
+      "name": "app.mail.from-name",
+      "type": "java.lang.String",
+      "description": "Display name used as the sender for outgoing mail."
+    },
+    {
+      "name": "app.mail.base-url",
+      "type": "java.lang.String",
+      "description": "Base URL used to build links in emails (e.g. verification links)."
+    },
+    {
+      "name": "app.mail.verification-expiry-minutes",
+      "type": "java.lang.Integer",
+      "description": "Number of minutes before an email verification link expires."
+    },
+    {
       "name": "twilio.account-sid",
-      "type": "java.lang.String"
+      "type": "java.lang.String",
+      "description": "Twilio account SID used for SMS/OTP delivery."
     },
     {
       "name": "twilio.auth-token",
-      "type": "java.lang.String"
+      "type": "java.lang.String",
+      "description": "Twilio auth token used for SMS/OTP delivery."
     },
     {
       "name": "twilio.phone-number",
-      "type": "java.lang.String"
+      "type": "java.lang.String",
+      "description": "Twilio phone number used as the SMS sender."
     },
     {
       "name": "otp.length",
-      "type": "java.lang.Integer"
+      "type": "java.lang.Integer",
+      "description": "Number of digits in a generated OTP."
     },
     {
       "name": "otp.expiry-minutes",
-      "type": "java.lang.Integer"
+      "type": "java.lang.Integer",
+      "description": "Number of minutes before an OTP expires."
     },
     {
       "name": "otp.max-attempts",
-      "type": "java.lang.Integer"
+      "type": "java.lang.Integer",
+      "description": "Maximum number of allowed OTP verification attempts."
     }
   ]
 }
