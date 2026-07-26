@@ -141,7 +141,7 @@ public class PublicUserService {
 
         System.out.println("Saved User ID = " + savedUser.getId());
 
-        emailService.sendVerificationEmail(savedUser);
+        // emailService.sendVerificationEmail(savedUser);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(savedUser.getEmail())

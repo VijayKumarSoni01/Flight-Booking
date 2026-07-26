@@ -14,7 +14,7 @@ public class UsermanagmentApplication {
 
 		System.out.println("Server Time: " + new Date());
         System.out.println("Zone: " + java.time.ZoneId.systemDefault());
-		SpringApplication.run(UsermanagmentApplication.class, args);
+    	SpringApplication.run(UsermanagmentApplication.class, args);
 	}
 
 }
