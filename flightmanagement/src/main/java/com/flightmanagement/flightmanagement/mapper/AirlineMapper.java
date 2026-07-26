@@ -13,5 +13,7 @@ public interface AirlineMapper {
     AirlineResDTO toDto(Airline airline);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "aircrafts", ignore = true)
     Airline toEntity(AirlineReqDTO request);
 }

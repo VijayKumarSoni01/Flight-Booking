@@ -9,10 +9,10 @@ import com.flightmanagement.flightmanagement.entity.Airport;
 
 @Mapper(componentModel = "spring")
 public interface AirportMapper {
-    
-AirportResDTO toDto(Airport airport);
+
+    AirportResDTO toDto(Airport airport);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "active", ignore = true)
     Airport toEntity(AirportReqDTO request);
-
 }
