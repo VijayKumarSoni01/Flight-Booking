@@ -26,229 +26,244 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FlightServiceImple implements FlightService {
 
-    private final FlightRepository flightRepository;
-    private final FlightMapper flightMapper;
+        private final FlightRepository flightRepository;
+        private final FlightMapper flightMapper;
 
-    private final AircraftRepository aircraftRepository;
-    private final AirportRepository airportRepository;
+        private final AircraftRepository aircraftRepository;
+        private final AirportRepository airportRepository;
 
-    @Override
-    @Transactional
-    public FlightResDTO createFlight(FlightReqDTO request) {
+        @Override
+        @Transactional
+        public FlightResDTO createFlight(FlightReqDTO request) {
 
-        if (request.getOriginAirportId().equals(request.getDestinationAirportId())) {
-            throw new IllegalArgumentException(
-                    "Origin and destination airports cannot be the same.");
+                if (request.getOriginAirportId().equals(request.getDestinationAirportId())) {
+                        throw new IllegalArgumentException(
+                                        "Origin and destination airports cannot be the same.");
+                }
+
+                if (!request.getArrivalTime().isAfter(request.getDepartureTime())) {
+                        throw new IllegalArgumentException(
+                                        "Arrival time must be after departure time.");
+                }
+
+                String flightNumber = normalizeFlightNumber(request.getFlightNumber());
+
+                Aircraft aircraft = aircraftRepository.findById(request.getAircraftId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + request.getAircraftId() + " not found."));
+
+                if (!aircraft.getActive()) {
+                        throw new IllegalArgumentException(
+                                        "Aircraft with ID " + request.getAircraftId() + " is inactive.");
+                }
+
+                Airline airline = aircraft.getAirline();
+                if (airline == null) {
+                        throw new IllegalStateException(
+                                        "Aircraft with id " + aircraft.getId() + " has no associated airline.");
+                }
+
+                Airport originAirport = airportRepository.findById(request.getOriginAirportId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Origin airport with ID " + request.getOriginAirportId()
+                                                                + " not found."));
+
+                Airport destinationAirport = airportRepository.findById(request.getDestinationAirportId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Destination airport with ID " + request.getDestinationAirportId()
+                                                                + " not found."));
+
+                if (flightRepository.existsByFlightNumberAndDepartureTime(
+                                flightNumber, request.getDepartureTime())) {
+                        throw new IllegalArgumentException(
+                                        "A flight with this flight number and departure time already exists.");
+                }
+
+                Flight flight = flightMapper.toEntity(request);
+                flight.setFlightNumber(flightNumber);
+                flight.setAircraft(aircraft);
+                flight.setAirline(airline);
+                flight.setOriginAirport(originAirport);
+                flight.setDestinationAirport(destinationAirport);
+
+                Flight saved = flightRepository.save(flight);
+
+                return flightMapper.toDto(saved);
         }
 
-        if (!request.getArrivalTime().isAfter(request.getDepartureTime())) {
-            throw new IllegalArgumentException(
-                    "Arrival time must be after departure time.");
+        @Override
+        @Transactional(readOnly = true)
+        public FlightResDTO getFlightById(Long id) {
+
+                Flight flight = flightRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Flight with ID " + id + " not found."));
+
+                return flightMapper.toDto(flight);
         }
 
-        String flightNumber = normalizeFlightNumber(request.getFlightNumber());
+        @Override
+        @Transactional(readOnly = true)
+        public List<FlightResDTO> getAllFlights() {
 
-        Aircraft aircraft = aircraftRepository.findById(request.getAircraftId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + request.getAircraftId() + " not found."));
-
-        if (!aircraft.getActive()) {
-            throw new IllegalArgumentException(
-                    "Aircraft with ID " + request.getAircraftId() + " is inactive.");
+                return flightRepository.findAll()
+                                .stream()
+                                .map(flightMapper::toDto)
+                                .toList();
         }
 
-        Airline airline = aircraft.getAirline();
-        if (airline == null) {
-            throw new IllegalStateException(
-                    "Aircraft with id " + aircraft.getId() + " has no associated airline.");
+        @Override
+        @Transactional(readOnly = true)
+        public List<FlightResDTO> searchFlights(
+                        Long originAirportId,
+                        Long destinationAirportId,
+                        LocalDate departureDate) {
+
+                if (originAirportId.equals(destinationAirportId)) {
+                        throw new IllegalArgumentException(
+                                        "Origin and destination airports cannot be the same.");
+                }
+
+                LocalDateTime start = departureDate.atStartOfDay();
+                LocalDateTime end = departureDate.plusDays(1).atStartOfDay();
+
+                return flightRepository
+                                .findByOriginAirportIdAndDestinationAirportIdAndDepartureTimeBetween(
+                                                originAirportId,
+                                                destinationAirportId,
+                                                start,
+                                                end)
+                                .stream()
+                                .map(flightMapper::toDto)
+                                .toList();
         }
 
-        Airport originAirport = airportRepository.findById(request.getOriginAirportId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Origin airport with ID " + request.getOriginAirportId() + " not found."));
+        @Override
+        @Transactional
+        public FlightResDTO updateFlight(Long id, FlightReqDTO request) {
 
-        Airport destinationAirport = airportRepository.findById(request.getDestinationAirportId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Destination airport with ID " + request.getDestinationAirportId() + " not found."));
+                Flight flight = flightRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Flight with ID " + id + " not found."));
 
-        if (flightRepository.existsByFlightNumberAndDepartureTime(
-                flightNumber, request.getDepartureTime())) {
-            throw new IllegalArgumentException(
-                    "A flight with this flight number and departure time already exists.");
+                if (request.getOriginAirportId().equals(request.getDestinationAirportId())) {
+                        throw new IllegalArgumentException(
+                                        "Origin and destination airports cannot be the same.");
+                }
+
+                if (!request.getArrivalTime().isAfter(request.getDepartureTime())) {
+                        throw new IllegalArgumentException(
+                                        "Arrival time must be after departure time.");
+                }
+
+                String flightNumber = normalizeFlightNumber(request.getFlightNumber());
+
+                if (flightRepository.existsByFlightNumberAndDepartureTimeAndIdNot(
+                                flightNumber, request.getDepartureTime(), id)) {
+                        throw new IllegalArgumentException(
+                                        "A flight with this flight number and departure time already exists.");
+                }
+
+                Aircraft aircraft = aircraftRepository.findById(request.getAircraftId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + request.getAircraftId() + " not found."));
+
+                if (!aircraft.getActive()) {
+                        throw new IllegalArgumentException(
+                                        "Aircraft with ID " + request.getAircraftId() + " is inactive.");
+                }
+
+                Airport originAirport = airportRepository.findById(request.getOriginAirportId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Origin airport with ID " + request.getOriginAirportId()
+                                                                + " not found."));
+
+                Airport destinationAirport = airportRepository.findById(request.getDestinationAirportId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Destination airport with ID " + request.getDestinationAirportId()
+                                                                + " not found."));
+
+                flightMapper.updateEntityFromDto(request, flight);
+
+                flight.setFlightNumber(flightNumber);
+                flight.setAircraft(aircraft);
+                flight.setAirline(aircraft.getAirline());
+                flight.setOriginAirport(originAirport);
+                flight.setDestinationAirport(destinationAirport);
+
+                Flight updatedFlight = flightRepository.save(flight);
+
+                return flightMapper.toDto(updatedFlight);
         }
 
-        Flight flight = flightMapper.toEntity(request);
-        flight.setFlightNumber(flightNumber);
-        flight.setAircraft(aircraft);
-        flight.setAirline(airline);
-        flight.setOriginAirport(originAirport);
-        flight.setDestinationAirport(destinationAirport);
+        @Override
+        @Transactional(readOnly = true)
+        public Boolean validateFlight(Long flightId) {
 
-        Flight saved = flightRepository.save(flight);
+                flightRepository.findById(flightId)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Flight with ID " + flightId + " not found."));
 
-        return flightMapper.toDto(saved);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public FlightResDTO getFlightById(Long id) {
-
-        Flight flight = flightRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Flight with ID " + id + " not found."));
-
-        return flightMapper.toDto(flight);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<FlightResDTO> getAllFlights() {
-
-        return flightRepository.findAll()
-                .stream()
-                .map(flightMapper::toDto)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<FlightResDTO> searchFlights(
-            Long originAirportId,
-            Long destinationAirportId,
-            LocalDate departureDate) {
-
-        if (originAirportId.equals(destinationAirportId)) {
-            throw new IllegalArgumentException(
-                    "Origin and destination airports cannot be the same.");
+                return true;
         }
 
-        LocalDateTime start = departureDate.atStartOfDay();
-        LocalDateTime end = departureDate.plusDays(1).atStartOfDay();
+        @Override
+        @Transactional
+        public FlightResDTO updateFlightStatus(Long id, FlightStatus status) {
 
-        return flightRepository
-                .findByOriginAirportIdAndDestinationAirportIdAndDepartureTimeBetween(
-                        originAirportId,
-                        destinationAirportId,
-                        start,
-                        end)
-                .stream()
-                .map(flightMapper::toDto)
-                .toList();
-    }
+                Flight flight = flightRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Flight with ID " + id + " not found."));
 
-    @Override
-    @Transactional
-    public FlightResDTO updateFlight(Long id, FlightReqDTO request) {
+                validateStatusTransition(flight.getStatus(), status);
 
-        Flight flight = flightRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Flight with ID " + id + " not found."));
+                if (status == FlightStatus.LANDED
+                                && flight.getStatus() != FlightStatus.DEPARTED) {
 
-        if (request.getOriginAirportId().equals(request.getDestinationAirportId())) {
-            throw new IllegalArgumentException(
-                    "Origin and destination airports cannot be the same.");
+                        throw new IllegalArgumentException(
+                                        "Only a departed flight can be marked as LANDED.");
+                }
+
+                flight.setStatus(status);
+
+                Flight updatedFlight = flightRepository.save(flight);
+
+                return flightMapper.toDto(updatedFlight);
         }
 
-        if (!request.getArrivalTime().isAfter(request.getDepartureTime())) {
-            throw new IllegalArgumentException(
-                    "Arrival time must be after departure time.");
+        @Override
+        @Transactional
+        public void deleteFlight(Long id) {
+
+                Flight flight = flightRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Flight with ID " + id + " not found."));
+
+                flightRepository.delete(flight);
         }
 
-        String flightNumber = normalizeFlightNumber(request.getFlightNumber());
+        private String normalizeFlightNumber(String flightNumber) {
 
-        if (flightRepository.existsByFlightNumberAndDepartureTimeAndIdNot(
-                flightNumber, request.getDepartureTime(), id)) {
-            throw new IllegalArgumentException(
-                    "A flight with this flight number and departure time already exists.");
+                return flightNumber
+                                .trim()
+                                .toUpperCase();
         }
 
-        Aircraft aircraft = aircraftRepository.findById(request.getAircraftId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + request.getAircraftId() + " not found."));
+        private void validateStatusTransition(
+                        FlightStatus current,
+                        FlightStatus next) {
 
-        if (!aircraft.getActive()) {
-            throw new IllegalArgumentException(
-                    "Aircraft with ID " + request.getAircraftId() + " is inactive.");
+                if (current == next) {
+                        throw new IllegalArgumentException(
+                                        "Flight is already in status " + current + ".");
+                }
+
+                if (current == FlightStatus.CANCELLED
+                                || current == FlightStatus.LANDED) {
+
+                        throw new IllegalStateException(
+                                        "Cannot change status of a flight that is already " + current + ".");
+                }
         }
-
-        Airport originAirport = airportRepository.findById(request.getOriginAirportId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Origin airport with ID " + request.getOriginAirportId() + " not found."));
-
-        Airport destinationAirport = airportRepository.findById(request.getDestinationAirportId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Destination airport with ID " + request.getDestinationAirportId() + " not found."));
-
-        flightMapper.updateEntityFromDto(request, flight);
-
-        flight.setFlightNumber(flightNumber);
-        flight.setAircraft(aircraft);
-        flight.setAirline(aircraft.getAirline());
-        flight.setOriginAirport(originAirport);
-        flight.setDestinationAirport(destinationAirport);
-
-        Flight updatedFlight = flightRepository.save(flight);
-
-        return flightMapper.toDto(updatedFlight);
-    }
-
-    @Override
-    @Transactional
-    public FlightResDTO updateFlightStatus(Long id, FlightStatus status) {
-
-        Flight flight = flightRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Flight with ID " + id + " not found."));
-
-        validateStatusTransition(flight.getStatus(), status);
-
-        if (status == FlightStatus.LANDED
-                && flight.getStatus() != FlightStatus.DEPARTED) {
-
-            throw new IllegalArgumentException(
-                    "Only a departed flight can be marked as LANDED.");
-        }
-
-        flight.setStatus(status);
-
-        Flight updatedFlight = flightRepository.save(flight);
-
-        return flightMapper.toDto(updatedFlight);
-    }
-
-    @Override
-    @Transactional
-    public void deleteFlight(Long id) {
-
-        Flight flight = flightRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Flight with ID " + id + " not found."));
-
-        flightRepository.delete(flight);
-    }
-
-    private String normalizeFlightNumber(String flightNumber) {
-
-        return flightNumber
-                .trim()
-                .toUpperCase();
-    }
-
-    private void validateStatusTransition(
-            FlightStatus current,
-            FlightStatus next) {
-
-        if (current == next) {
-            throw new IllegalArgumentException(
-                    "Flight is already in status " + current + ".");
-        }
-
-        if (current == FlightStatus.CANCELLED
-                || current == FlightStatus.LANDED) {
-
-            throw new IllegalStateException(
-                    "Cannot change status of a flight that is already " + current + ".");
-        }
-    }
 
 }

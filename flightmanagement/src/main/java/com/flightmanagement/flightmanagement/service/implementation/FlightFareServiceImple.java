@@ -25,92 +25,95 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class FlightFareServiceImple implements FlightFareService {
 
-    private final FlightFareRepository flightFareRepository;
-    private final FlightRepository flightRepository;
-    private final FlightFareMapper flightFareMapper;
+        private final FlightFareRepository flightFareRepository;
+        private final FlightRepository flightRepository;
+        private final FlightFareMapper flightFareMapper;
 
-    @Override
-    public FlightFareResDTO createFare(FlightFareReqDTO request) {
+        @Override
+        public FlightFareResDTO createFare(FlightFareReqDTO request) {
 
-        Flight flight = flightRepository.findById(request.getFlightId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Flight with ID " + request.getFlightId() + " not found."));
+                Flight flight = flightRepository.findById(request.getFlightId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Flight with ID " + request.getFlightId() + " not found."));
 
-        if (flightFareRepository.existsByFlightIdAndCabinClass(
-                request.getFlightId(), request.getCabinClass())) {
-            throw new ResourceAlreadyExistsException(
-                    "A fare for cabin class " + request.getCabinClass()
-                            + " already exists for Flight ID " + request.getFlightId() + ".");
+                if (flightFareRepository.existsByFlightIdAndCabinClass(
+                                request.getFlightId(), request.getCabinClass())) {
+                        throw new ResourceAlreadyExistsException(
+                                        "A fare for cabin class " + request.getCabinClass()
+                                                        + " already exists for Flight ID " + request.getFlightId()
+                                                        + ".");
+                }
+
+                FlightFare fare = flightFareMapper.toEntity(request);
+                fare.setFlight(flight);
+
+                FlightFare savedFare = flightFareRepository.save(fare);
+
+                return flightFareMapper.toDto(savedFare);
         }
 
-        FlightFare fare = flightFareMapper.toEntity(request);
-        fare.setFlight(flight);
+        @Override
+        @Transactional(readOnly = true)
+        public List<FlightFareResDTO> getFaresByFlightId(Long flightId) {
 
-        FlightFare savedFare = flightFareRepository.save(fare);
+                return flightFareRepository.findByFlightId(flightId)
+                                .stream()
+                                .map(flightFareMapper::toDto)
+                                .toList();
+        }
 
-        return flightFareMapper.toDto(savedFare);
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public FlightFareResDTO getFareByFlightIdAndCabinClass(Long flightId, CabinClass cabinClass) {
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<FlightFareResDTO> getFaresByFlightId(Long flightId) {
+                FlightFare fare = flightFareRepository.findByFlightIdAndCabinClass(flightId, cabinClass)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "No fare found for Flight ID " + flightId
+                                                                + " and cabin class " + cabinClass + "."));
 
-        return flightFareRepository.findByFlightId(flightId)
-                .stream()
-                .map(flightFareMapper::toDto)
-                .toList();
-    }
+                return flightFareMapper.toDto(fare);
+        }
 
-    @Override
-    @Transactional(readOnly = true)
-    public FlightFareResDTO getFareByFlightIdAndCabinClass(Long flightId, CabinClass cabinClass) {
+        @Override
+        @Transactional(readOnly = true)
+        public List<FlightFareResDTO> getAllFares() {
 
-        FlightFare fare = flightFareRepository.findByFlightIdAndCabinClass(flightId, cabinClass)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No fare found for Flight ID " + flightId
-                                + " and cabin class " + cabinClass + "."));
+                return flightFareRepository.findAll()
+                                .stream()
+                                .map(flightFareMapper::toDto)
+                                .toList();
+        }
 
-        return flightFareMapper.toDto(fare);
-    }
+        @Override
+        public FlightFareResDTO updateFare(
+                        Long flightId,
+                        CabinClass cabinClass,
+                        FlightFareUpdateReqDTO request) {
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<FlightFareResDTO> getAllFares() {
+                FlightFare fare = flightFareRepository
+                                .findByFlightIdAndCabinClass(flightId, cabinClass)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "No fare found for Flight ID " + flightId
+                                                                + " and cabin class " + cabinClass + "."));
 
-        return flightFareRepository.findAll()
-                .stream()
-                .map(flightFareMapper::toDto)
-                .toList();
-    }
+                fare.setAdultFare(request.getAdultFare());
+                fare.setChildFare(request.getChildFare());
+                fare.setInfantFare(request.getInfantFare());
+                fare.setCurrency(request.getCurrency());
+                fare.setIncludesTax(request.getIncludesTax());
 
-    @Override
-    public FlightFareResDTO updateFare(
-            Long flightId,
-            CabinClass cabinClass,
-            FlightFareUpdateReqDTO request) {
+                FlightFare updatedFare = flightFareRepository.save(fare);
 
-        FlightFare fare = flightFareRepository
-                .findByFlightIdAndCabinClass(flightId, cabinClass)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No fare found for Flight ID " + flightId
-                                + " and cabin class " + cabinClass + "."));
+                return flightFareMapper.toDto(updatedFare);
+        }
 
-        fare.setPrice(request.getPrice());
-        fare.setCurrency(request.getCurrency());
-        fare.setIncludesTax(request.getIncludesTax());
+        @Override
+        public void deleteFare(Long id) {
 
-        FlightFare updatedFare = flightFareRepository.save(fare);
+                FlightFare fare = flightFareRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Fare with ID " + id + " not found."));
 
-        return flightFareMapper.toDto(updatedFare);
-    }
-
-    @Override
-    public void deleteFare(Long id) {
-
-        FlightFare fare = flightFareRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Fare with ID " + id + " not found."));
-
-        flightFareRepository.delete(fare);
-    }
+                flightFareRepository.delete(fare);
+        }
 }

@@ -21,6 +21,8 @@ public interface FlightService {
             LocalDate departureDate);
 
     FlightResDTO updateFlight(Long id, FlightReqDTO request);
+    
+    Boolean validateFlight(Long flightId);
 
     FlightResDTO updateFlightStatus(
             Long id,

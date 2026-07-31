@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/flight-status-info")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Flight Status Information", description = "Manage real-time flight operational status, delays, gates, and timings.")
 public class FlightStatusInfoController {
@@ -27,7 +28,6 @@ public class FlightStatusInfoController {
     private final FlightStatusInfoService flightStatusInfoService;
 
     @PostMapping
-    // @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create Flight Status Information", description = "Creates operational status information for a flight. Only one status record is allowed per flight.")
     public ResponseEntity<FlightStatusInfoResDTO> createFlightStatus(
             @Valid @RequestBody FlightStatusInfoReqDTO request) {
@@ -67,7 +67,6 @@ public class FlightStatusInfoController {
     }
 
     @PutMapping("/flight/{flightId}")
-    // @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update Flight Status Information", description = "Updates the operational status, estimated/actual timings, delay information, and gates for a flight.")
     public ResponseEntity<FlightStatusInfoResDTO> updateFlightStatus(
             @PathVariable Long flightId,
@@ -78,7 +77,6 @@ public class FlightStatusInfoController {
     }
 
     @DeleteMapping("/flight/{flightId}")
-    // @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete Flight Status Information", description = "Deletes the operational status record associated with the specified flight.")
     public ResponseEntity<Void> deleteFlightStatus(
             @Parameter(description = "Flight ID", example = "1") @PathVariable Long flightId) {

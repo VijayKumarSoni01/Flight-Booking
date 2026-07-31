@@ -12,16 +12,27 @@ import lombok.Data;
 
 @Data
 public class FlightFareReqDTO {
+
     @NotNull(message = "Flight ID is required")
     private Long flightId;
 
     @NotNull(message = "Cabin class is required")
     private CabinClass cabinClass;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    @Digits(integer = 8, fraction = 2, message = "Price must have up to 8 integer digits and 2 decimal places")
-    private BigDecimal price;
+    @NotNull(message = "Adult fare is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Adult fare must be greater than 0")
+    @Digits(integer = 8, fraction = 2, message = "Adult fare must have up to 8 integer digits and 2 decimal places")
+    private BigDecimal adultFare;
+
+    @NotNull(message = "Child fare is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Child fare must be greater than 0")
+    @Digits(integer = 8, fraction = 2, message = "Child fare must have up to 8 integer digits and 2 decimal places")
+    private BigDecimal childFare;
+
+    @NotNull(message = "Infant fare is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Infant fare must be greater than 0")
+    @Digits(integer = 8, fraction = 2, message = "Infant fare must have up to 8 integer digits and 2 decimal places")
+    private BigDecimal infantFare;
 
     @NotNull(message = "Currency is required")
     private CurrencyCode currency;

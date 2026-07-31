@@ -1,35 +1,89 @@
-HELP.md
+# Maven
 target/
+
+# Keep Maven Wrapper (Recommended)
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+!mvnw
+!mvnw.cmd
+
+# Spring Boot
+HELP.md
+
+# Environment Variables
 .env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Extracted JAR Contents
+BOOT-INF/
+META-INF/
+tempJar/
+
+# IDE - VS Code
 .vscode/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+*.code-workspace
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# IntelliJ IDEA
+.idea/
 *.iml
 *.ipr
+*.iws
 
-### NetBeans ###
+# IntelliJ HTTP Client
+.idea/httpRequests/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
+
+# Gradle
 build/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated Files
+*.class
+
+# Docker
+docker-compose.override.yml
+
+# Temporary Files
+*.tmp
+*.bak
+*.swp
+
+# Java Upgrade Session
+.github/java-upgrade/
+
+# Secrets
+*.pem
+*.key
+*.jks
+*.keystore
+*.p12
+
+# Keep nested build folders if needed
+!**/src/main/**/target/
+!**/src/test/**/target/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-### VS Code ###
-.vscode/

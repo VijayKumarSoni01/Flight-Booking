@@ -23,13 +23,13 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/flight-amenities")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class FlightAmenityController {
 
     private final FlightAmenityService flightAmenityService;
 
     @PostMapping
-    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<FlightAmenityResDTO> createAmenity(
             @Valid @RequestBody FlightAmenityReqDTO request) {
 
@@ -59,7 +59,6 @@ public class FlightAmenityController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<FlightAmenityResDTO> updateAmenity(
             @PathVariable Long id,
             @Valid @RequestBody FlightAmenityReqDTO request) {
@@ -69,7 +68,6 @@ public class FlightAmenityController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteAmenity(@PathVariable Long id) {
 
         flightAmenityService.deleteAmenity(id);

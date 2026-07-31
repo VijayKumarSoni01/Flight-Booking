@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/flight-fares")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Flight Fare Management", description = "Manage flight fares for different cabin classes.")
 public class FlightFareController {
@@ -65,7 +66,6 @@ public class FlightFareController {
     }
 
     @PutMapping("/flight/{flightId}/class/{cabinClass}")
-    // @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update Flight Fare", description = "Update an existing fare by Fare ID.")
     public ResponseEntity<FlightFareResDTO> updateFare(
             @PathVariable Long flightId,
@@ -77,7 +77,6 @@ public class FlightFareController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete Flight Fare", description = "Delete a fare using its Fare ID.")
     public ResponseEntity<Void> deleteFare(
 

@@ -40,16 +40,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
+    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
 
-    ex.printStackTrace();
+        ex.printStackTrace();
 
-    return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(Map.of(
-                    "error", ex.getClass().getSimpleName(),
-                    "message", ex.getMessage()));
-}
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "error", ex.getClass().getSimpleName(),
+                        "message", ex.getMessage()));
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(ResourceNotFoundException ex) {
@@ -63,5 +63,15 @@ public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(SeatAlreadyBookedException.class)
+    public ResponseEntity<Map<String, String>> handleSeatAlreadyBooked(
+            SeatAlreadyBookedException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", ex.getMessage()));
     }
 }

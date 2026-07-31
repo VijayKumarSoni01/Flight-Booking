@@ -48,7 +48,13 @@ public class FlightFare {
     private CabinClass cabinClass;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    private BigDecimal adultFare;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal childFare;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal infantFare;
 
     @Column(nullable = false, length = 10)
     @Enumerated(EnumType.STRING)

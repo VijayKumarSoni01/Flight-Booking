@@ -11,6 +11,7 @@ import lombok.Data;
 @Data
 @Builder
 public class FlightFareResDTO {
+
     private Long id;
 
     private Long flightId;
@@ -19,7 +20,11 @@ public class FlightFareResDTO {
 
     private CabinClass cabinClass;
 
-    private BigDecimal price;
+    private BigDecimal adultFare;
+
+    private BigDecimal childFare;
+
+    private BigDecimal infantFare;
 
     private CurrencyCode currency;
 
