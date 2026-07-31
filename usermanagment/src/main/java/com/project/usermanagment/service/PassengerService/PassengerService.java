@@ -23,6 +23,36 @@ public class PassengerService {
     private final PassengerRepository passengerRepository;
     private final UserRepository userRepository;
 
+    public void createDefaultPassenger(User user) {
+
+        boolean exists = passengerRepository.findByUserId(user.getId())
+                .stream()
+                .anyMatch(p -> p.getFirstName().equalsIgnoreCase(user.getFirstName())
+                        && p.getLastName().equalsIgnoreCase(user.getLastName())
+                        && p.getDateOfBirth().equals(user.getDateOfBirth()));
+
+        if (exists) {
+            return;
+        }
+
+        Passenger passenger = Passenger.builder()
+                .title(user.getTitle())
+                .firstName(user.getFirstName())
+                .middleName(user.getMiddleName())
+                .lastName(user.getLastName())
+                .dateOfBirth(user.getDateOfBirth())
+                .gender(user.getGender())
+                .nationality(user.getNationality())
+                .passportNumber(null)
+                .passportExpiry(null)
+                .issuingCountry(null)
+                .passengerType(null)
+                .user(user)
+                .build();
+
+        passengerRepository.save(passenger);
+    }
+
     public PassengerResponseDTO addPassenger(String email, PassengerRequestDTO request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not Found"));

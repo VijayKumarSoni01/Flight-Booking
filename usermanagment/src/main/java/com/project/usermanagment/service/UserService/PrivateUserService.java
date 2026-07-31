@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-// import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.project.usermanagment.dtos.UserDTO.OtherDTO.UpdateDTO;
@@ -12,7 +11,6 @@ import com.project.usermanagment.dtos.UserDTO.passwordDTO.ChangePassRequest;
 import com.project.usermanagment.entity.User;
 
 import com.project.usermanagment.repository.UserRepository;
-// import com.project.usermanagment.security.JwtUtil;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +21,10 @@ public class PrivateUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    // private final JwtUtil jwtUtil;
 
     public User updateProfile(String email, UpdateDTO update) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        // user.setVersion(update.getVersion());
 
         boolean hashFirst = update.getFirstName() != null;
         boolean hashLast = update.getLastName() != null;

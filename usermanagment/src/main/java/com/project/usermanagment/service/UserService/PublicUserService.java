@@ -12,7 +12,9 @@ import com.project.usermanagment.dtos.UserDTO.securitydto.UserAuthResponse;
 import com.project.usermanagment.entity.User;
 import com.project.usermanagment.enumFolder.OtpType;
 import com.project.usermanagment.repository.UserRepository;
+import com.project.usermanagment.security.CustomUserDetails;
 import com.project.usermanagment.security.JwtUtil;
+import com.project.usermanagment.service.PassengerService.PassengerService;
 import com.project.usermanagment.service.UserService.Verification.EmailVerificationService;
 import com.project.usermanagment.service.UserService.Verification.NumberVerificationService;
 
@@ -31,6 +33,7 @@ public class PublicUserService {
     private final EmailVerificationService emailService;
     private final NumberVerificationService numberVerificationService;
     private final OtpService otpService;
+    private final PassengerService passengerService;
 
     public UserAuthResponse login(String identifier, String password, String ipAddress) {
 
@@ -68,11 +71,14 @@ public class PublicUserService {
 
         userRepository.save(user);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPassword())
-                .authorities("USER")
-                .build();
+        UserDetails userDetails = new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getRoles()
+                        .stream()
+                        .map(role -> "ROLE_" + role.name())
+                        .toList());
 
         String token = jwtUtil.generateAccessToken(userDetails);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);
@@ -139,15 +145,17 @@ public class PublicUserService {
 
         userRepository.flush();
 
+        passengerService.createDefaultPassenger(savedUser);
+
         System.out.println("Saved User ID = " + savedUser.getId());
 
-        // emailService.sendVerificationEmail(savedUser);
+        emailService.sendVerificationEmail(savedUser);
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(savedUser.getEmail())
-                .password(savedUser.getPassword())
-                .authorities("USER")
-                .build();
+        UserDetails userDetails = new CustomUserDetails(
+        savedUser.getId(),
+        savedUser.getEmail(),
+        savedUser.getPassword(),
+        List.of("ROLE_USER"));
 
         String token = jwtUtil.generateAccessToken(userDetails);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);
@@ -256,13 +264,21 @@ public class PublicUserService {
             throw new RuntimeException("Invalid refresh token");
         }
 
-        String newAccessToken = jwtUtil.generateAccessToken(user);
+        UserDetails userDetails = new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getRoles()
+                        .stream()
+                        .map(role -> "ROLE_" + role.name())
+                        .toList());
+
+        String newAccessToken = jwtUtil.generateAccessToken(userDetails);
 
         return UserAuthResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken)
                 .build();
-
     }
 
     public void generateRestoreToken(String email) {

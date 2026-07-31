@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +28,24 @@ public class JwtUtil {
     private final JwtProperties jwtProperties;
 
     public String generateAccessToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", userDetails.getAuthorities()
-                .stream()
-                .map(a -> a.getAuthority())
-                .toList());
-        return buildToken(claims, userDetails, jwtProperties.getExpirationTime());
-    }
+
+    CustomUserDetails user = (CustomUserDetails) userDetails;
+
+    Map<String, Object> claims = new HashMap<>();
+
+    claims.put("userId", user.getId());
+
+    claims.put("roles",
+            user.getAuthorities()
+                    .stream()
+                    .map(authority -> authority.getAuthority())
+                    .toList());
+
+    return buildToken(
+            claims,
+            userDetails,
+            jwtProperties.getExpirationTime());
+}
 
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, jwtProperties.getRefreshExpirationTime());
