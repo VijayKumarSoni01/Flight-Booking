@@ -1,0 +1,80 @@
+server:
+  address: 0.0.0.0
+  port: 8080
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            # User Management Service
+            - id: user-service
+              uri: http://user-management:8081
+              predicates:
+                - Path=/api/public/**,/api/private/**
+
+            # Flight Management Service
+            - id: flight-service
+              uri: http://flight-management:8082
+              predicates:
+                - Path=/api/flights/**,/api/aircrafts/**,/api/airlines/**,/api/airports/**,/api/baggage-policies/**,/api/flight-amenities/**,/api/flight-fares/**,/api/flight-status-info/**
+
+            # Booking Management Service
+            - id: booking-service
+              uri: http://booking-management:8083
+              predicates:
+                - Path=/api/private/bookings/**
+
+            # User Management Swagger
+            - id: user-docs
+              uri: http://user-management:8081
+              predicates:
+                - Path=/user/v3/api-docs
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: "/user/(?<segment>.*)"
+                    replacement: "/${segment}"
+
+            # Flight Management Swagger
+            - id: flight-docs
+              uri: http://flight-management:8082
+              predicates:
+                - Path=/flight/v3/api-docs
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: "/flight/(?<segment>.*)"
+                    replacement: "/${segment}"
+
+
+            # Booking Management Swagger
+            - id: booking-docs
+              uri: http://booking-management:8083
+              predicates:
+                - Path=/booking/v3/api-docs
+              filters:
+                - name: RewritePath
+                  args:
+                    regexp: "/booking/(?<segment>.*)"
+                    replacement: "/${segment}"
+
+logging:
+  level:
+    "[org.springframework.cloud.gateway]": INFO
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: "User Management"
+        url: "/user/v3/api-docs"
+      - name: "Flight Management"
+        url: "/flight/v3/api-docs"
+      - name: Booking Management
+        url: /booking/v3/api-docs
