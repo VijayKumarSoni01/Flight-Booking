@@ -1,0 +1,108 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    restart: always
+
+    env_file:
+      - ./usermanagment/.env
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: user_management
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  user-management:
+    build:
+      context: ./usermanagment
+
+    container_name: user-management
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    ports:
+      - "8081:8081"
+
+    env_file:
+      - ./usermanagment/.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  flight-management:
+    build:
+      context: ./flightmanagement
+
+    container_name: flight-management
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    ports:
+      - "8082:8082"
+
+    env_file:
+      - ./flightmanagement/.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  booking-management:
+    build:
+      context: ./bookingmanagement
+
+    container_name: booking-management
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    ports:
+      - "8083:8083"
+
+    env_file:
+      - ./bookingmanagement/.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  api-gateway:
+    build:
+      context: ./apigateway
+
+    container_name: api-gateway
+
+    depends_on:
+      user-management:
+        condition: service_started
+      flight-management:
+        condition: service_started
+      booking-management:
+        condition: service_started
+
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - ./apigateway/.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+volumes:
+  mysql_data:

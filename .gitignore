@@ -7,8 +7,44 @@ logs/
 
 # Environment files
 .env
-.env.backup
+.env.*
+!.env.example
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Maven / Gradle
+**/target/
+**/build/
+
+# Spring Boot extracted JAR
+**/BOOT-INF/
+**/META-INF/
+**/tempJar/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.factorypath
+.springBeans
+.sts4-cache/
+.apt_generated/
+
+# GitHub Java Upgrade
+.github/java-upgrade/
+
+# Security files
+*.pem
+*.key
+*.jks
+*.keystore
+*.p12
