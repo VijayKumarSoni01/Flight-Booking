@@ -1,0 +1,22 @@
+package com.project.bookingmanagement.enums.validation;
+
+public enum PassengerValidationError {
+    PASSPORT_REQUIRED,
+    PASSPORT_INVALID,
+    PASSPORT_EXPIRED,
+
+    INVALID_AGE,
+    INVALID_NATIONALITY,
+
+    SEAT_NOT_ELIGIBLE,
+    CABIN_CLASS_NOT_ALLOWED,
+
+    INFANT_REQUIRES_ADULT,
+    CHILD_AGE_MISMATCH,
+
+    DUPLICATE_PASSENGER,
+
+    INVALID_MEAL_PREFERENCE,
+
+    SPECIAL_ASSISTANCE_NOT_SUPPORTED
+}
