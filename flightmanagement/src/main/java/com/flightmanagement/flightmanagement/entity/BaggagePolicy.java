@@ -23,9 +23,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "baggage_policy", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "flight_id")
-})
+@Table(
+    name = "baggage_policy",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "flight_id", "cabin_class" })
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

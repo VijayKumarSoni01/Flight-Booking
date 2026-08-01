@@ -1,5 +1,7 @@
 package com.flightmanagement.flightmanagement.entity;
 
+import com.flightmanagement.flightmanagement.enums.CabinClass;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -68,5 +70,24 @@ public class Aircraft {
                 + premiumEconomySeats
                 + businessSeats
                 + firstClassSeats;
+    }
+
+    @Transient
+    public boolean isCabinAvailable(CabinClass cabinClass) {
+
+        return switch (cabinClass) {
+
+            case ECONOMY ->
+                economySeats > 0;
+
+            case PREMIUM_ECONOMY ->
+                premiumEconomySeats > 0;
+
+            case BUSINESS ->
+                businessSeats > 0;
+
+            case FIRST ->
+                firstClassSeats > 0;
+        };
     }
 }

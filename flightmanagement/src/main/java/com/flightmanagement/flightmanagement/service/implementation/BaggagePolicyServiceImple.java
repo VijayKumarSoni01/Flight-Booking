@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.flightmanagement.flightmanagement.service.interFace.BaggagePolicyService;
 import com.flightmanagement.flightmanagement.dtos.requestDTOs.BaggagePolicyReqDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.BaggagePolicyResDTO;
+import com.flightmanagement.flightmanagement.entity.Aircraft;
 import com.flightmanagement.flightmanagement.entity.BaggagePolicy;
 import com.flightmanagement.flightmanagement.entity.Flight;
 import com.flightmanagement.flightmanagement.enums.CabinClass;
@@ -34,6 +35,15 @@ public class BaggagePolicyServiceImple implements BaggagePolicyService {
                                                 "Flight with ID "
                                                                 + request.getFlightId()
                                                                 + " not found."));
+
+                Aircraft aircraft = flight.getAircraft();
+
+                if (!aircraft.isCabinAvailable(request.getCabinClass())) {
+                        throw new IllegalArgumentException(
+                                        request.getCabinClass()
+                                                        + " cabin is not available for aircraft "
+                                                        + aircraft.getModel());
+                }
 
                 if (baggagePolicyRepository.existsByFlightIdAndCabinClass(
                                 request.getFlightId(),

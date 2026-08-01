@@ -12,10 +12,12 @@ import com.flightmanagement.flightmanagement.dtos.requestDTOs.SeatReservationReq
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatAvailabilityResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatReservationResponse;
+import com.flightmanagement.flightmanagement.entity.Aircraft;
 import com.flightmanagement.flightmanagement.entity.Flight;
 import com.flightmanagement.flightmanagement.entity.Seat;
 import com.flightmanagement.flightmanagement.enums.CabinClass;
 import com.flightmanagement.flightmanagement.enums.SeatStatus;
+import com.flightmanagement.flightmanagement.exception.FlightNotFoundException;
 import com.flightmanagement.flightmanagement.exception.ResourceNotFoundException;
 import com.flightmanagement.flightmanagement.exception.SeatAlreadyBookedException;
 import com.flightmanagement.flightmanagement.mapper.SeatMapper;
@@ -336,6 +338,82 @@ public class SeatServiceImple implements SeatService {
                 seatRepository.saveAll(seats);
 
                 System.out.println("Seats released successfully.");
+        }
+
+        @Override
+        @Transactional
+        public void generateSeats(Long flightId) {
+
+                Flight flight = flightRepository.findById(flightId)
+                                .orElseThrow(() -> new FlightNotFoundException(flightId));
+
+                if (seatRepository.existsByFlightId(flightId)) {
+
+                        throw new IllegalStateException(
+                                        "Seats have already been generated for Flight ID: "
+                                                        + flightId);
+                }
+
+                Aircraft aircraft = flight.getAircraft();
+
+                List<Seat> seats = new ArrayList<>();
+
+                generateCabinSeats(
+                                seats,
+                                flight,
+                                CabinClass.ECONOMY,
+                                aircraft.getEconomySeats(),
+                                "E");
+
+                generateCabinSeats(
+                                seats,
+                                flight,
+                                CabinClass.PREMIUM_ECONOMY,
+                                aircraft.getPremiumEconomySeats(),
+                                "PE");
+
+                generateCabinSeats(
+                                seats,
+                                flight,
+                                CabinClass.BUSINESS,
+                                aircraft.getBusinessSeats(),
+                                "B");
+
+                generateCabinSeats(
+                                seats,
+                                flight,
+                                CabinClass.FIRST,
+                                aircraft.getFirstClassSeats(),
+                                "F");
+
+                seatRepository.saveAll(seats);
+        }
+
+        private void generateCabinSeats(
+                        List<Seat> seats,
+                        Flight flight,
+                        CabinClass cabinClass,
+                        int seatCount,
+                        String prefix) {
+
+                if (seatCount <= 0) {
+                        return;
+                }
+
+                for (int i = 1; i <= seatCount; i++) {
+
+                        Seat seat = Seat.builder()
+                                        .flight(flight)
+                                        .cabinClass(cabinClass)
+                                        .seatNumber(prefix + String.format("%03d", i))
+                                        .seatIndex(i)
+                                        .seatStatus(SeatStatus.AVAILABLE)
+                                        .bookingReference(null)
+                                        .reservedAt(null)
+                                        .build();
+
+                        seats.add(seat);
+                }
         }
 
 }

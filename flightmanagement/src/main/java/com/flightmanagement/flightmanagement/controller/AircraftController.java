@@ -18,6 +18,7 @@ import com.flightmanagement.flightmanagement.service.interFace.AircraftService;
 import com.flightmanagement.flightmanagement.dtos.requestDTOs.AircraftReqDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.AircraftResDTO;
 import com.flightmanagement.flightmanagement.dtos.securityDTOs.ApiResponse;
+import com.flightmanagement.flightmanagement.enums.CabinClass;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,6 +88,19 @@ public class AircraftController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(null, "Aircraft deactivated successfully."));
+    }
+
+    @GetMapping("/{id}/cabins/{cabinClass}")
+    public ResponseEntity<ApiResponse<Boolean>> isCabinAvailable(
+            @PathVariable Long id,
+            @PathVariable CabinClass cabinClass) {
+
+        boolean available = aircraftService.isCabinAvailable(id, cabinClass);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        available,
+                        "Cabin availability checked successfully."));
     }
 
 }

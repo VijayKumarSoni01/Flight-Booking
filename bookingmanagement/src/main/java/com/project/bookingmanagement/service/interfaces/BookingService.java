@@ -31,4 +31,6 @@ public interface BookingService {
     BookingCancellationResponse cancelBooking(
         Long bookingId,
         CancelBookingRequest request);
+
+         BookingConfirmationResponse confirmBooking(Long bookingId);
 }

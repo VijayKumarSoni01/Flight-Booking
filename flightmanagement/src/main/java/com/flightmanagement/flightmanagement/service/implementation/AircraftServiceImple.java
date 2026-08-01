@@ -9,6 +9,8 @@ import com.flightmanagement.flightmanagement.dtos.requestDTOs.AircraftReqDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.AircraftResDTO;
 import com.flightmanagement.flightmanagement.entity.Aircraft;
 import com.flightmanagement.flightmanagement.entity.Airline;
+import com.flightmanagement.flightmanagement.enums.CabinClass;
+import com.flightmanagement.flightmanagement.exception.AircraftNotFoundException;
 import com.flightmanagement.flightmanagement.mapper.AircraftMapper;
 import com.flightmanagement.flightmanagement.repository.AircraftRepository;
 import com.flightmanagement.flightmanagement.repository.AirlineRepository;
@@ -19,126 +21,163 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AircraftServiceImple implements AircraftService {
-    private final AircraftRepository aircraftRepository;
-    private final AircraftMapper aircraftMapper;
-    private final AirlineRepository airlineRepository;
+        private final AircraftRepository aircraftRepository;
+        private final AircraftMapper aircraftMapper;
+        private final AirlineRepository airlineRepository;
 
-    @Override
-    @Transactional
-    public AircraftResDTO createAircraft(AircraftReqDTO request) {
+        @Override
+        @Transactional
+        public AircraftResDTO createAircraft(AircraftReqDTO request) {
 
-        if (aircraftRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
-            throw new IllegalArgumentException(
-                    "Aircraft with registration number " + request.getRegistrationNumber() + " already exists.");
+                if (aircraftRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
+                        throw new IllegalArgumentException(
+                                        "Aircraft with registration number " + request.getRegistrationNumber()
+                                                        + " already exists.");
+                }
+
+                Airline airline = airlineRepository.findById(request.getAirlineId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Airline with ID " + request.getAirlineId() + " not found."));
+
+                Aircraft aircraft = Aircraft.builder()
+                                .registrationNumber(request.getRegistrationNumber().trim().toUpperCase())
+                                .model(request.getModel().trim())
+                                .manufacturer(request.getManufacturer().trim())
+                                .economySeats(request.getEconomySeats())
+                                .premiumEconomySeats(request.getPremiumEconomySeats())
+                                .businessSeats(request.getBusinessSeats())
+                                .firstClassSeats(request.getFirstClassSeats())
+                                .active(request.getActive() == null ? true : request.getActive())
+                                .airline(airline)
+                                .build();
+
+                Aircraft savedAircraft = aircraftRepository.save(aircraft);
+
+                return aircraftMapper.toDto(savedAircraft);
         }
 
-        Airline airline = airlineRepository.findById(request.getAirlineId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Airline with ID " + request.getAirlineId() + " not found."));
+        @Override
+        @Transactional(readOnly = true)
+        public List<AircraftResDTO> getAllAircraft() {
 
-        Aircraft aircraft = Aircraft.builder()
-                .registrationNumber(request.getRegistrationNumber().trim().toUpperCase())
-                .model(request.getModel().trim())
-                .manufacturer(request.getManufacturer().trim())
-                .economySeats(request.getEconomySeats())
-                .premiumEconomySeats(request.getPremiumEconomySeats())
-                .businessSeats(request.getBusinessSeats())
-                .firstClassSeats(request.getFirstClassSeats())
-                .active(request.getActive() == null ? true : request.getActive())
-                .airline(airline)
-                .build();
-
-        Aircraft savedAircraft = aircraftRepository.save(aircraft);
-
-        return aircraftMapper.toDto(savedAircraft);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<AircraftResDTO> getAllAircraft() {
-
-        return aircraftRepository.findAll()
-                .stream()
-                .map(aircraftMapper::toDto)
-                .toList();
-    }
-
-    @Override
-    @Transactional
-    public AircraftResDTO updateAircraft(Long aircraftId, AircraftReqDTO request) {
-
-        Aircraft aircraft = aircraftRepository.findById(aircraftId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + aircraftId + " not found."));
-
-        Airline airline = airlineRepository.findById(request.getAirlineId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Airline with ID " + request.getAirlineId() + " not found."));
-
-        if (!aircraft.getRegistrationNumber()
-                .equalsIgnoreCase(request.getRegistrationNumber().trim().toUpperCase())
-                && aircraftRepository.existsByRegistrationNumber(
-                        request.getRegistrationNumber().trim().toUpperCase())) {
-
-            throw new IllegalArgumentException(
-                    "Aircraft with registration number "
-                            + request.getRegistrationNumber()
-                            + " already exists.");
+                return aircraftRepository.findAll()
+                                .stream()
+                                .map(aircraftMapper::toDto)
+                                .toList();
         }
 
-        aircraft.setRegistrationNumber(request.getRegistrationNumber().trim().toUpperCase());
-        aircraft.setModel(request.getModel().trim());
-        aircraft.setManufacturer(request.getManufacturer().trim());
+        @Override
+        @Transactional
+        public AircraftResDTO updateAircraft(Long aircraftId, AircraftReqDTO request) {
 
-        aircraft.setEconomySeats(request.getEconomySeats());
-        aircraft.setPremiumEconomySeats(request.getPremiumEconomySeats());
-        aircraft.setBusinessSeats(request.getBusinessSeats());
-        aircraft.setFirstClassSeats(request.getFirstClassSeats());
+                Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + aircraftId + " not found."));
 
-        aircraft.setActive(
-                request.getActive() == null ? aircraft.getActive() : request.getActive());
+                Airline airline = airlineRepository.findById(request.getAirlineId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Airline with ID " + request.getAirlineId() + " not found."));
 
-        aircraft.setAirline(airline);
+                if (!aircraft.getRegistrationNumber()
+                                .equalsIgnoreCase(request.getRegistrationNumber().trim().toUpperCase())
+                                && aircraftRepository.existsByRegistrationNumber(
+                                                request.getRegistrationNumber().trim().toUpperCase())) {
 
-        Aircraft updatedAircraft = aircraftRepository.save(aircraft);
+                        throw new IllegalArgumentException(
+                                        "Aircraft with registration number "
+                                                        + request.getRegistrationNumber()
+                                                        + " already exists.");
+                }
 
-        return aircraftMapper.toDto(updatedAircraft);
-    }
+                aircraft.setRegistrationNumber(request.getRegistrationNumber().trim().toUpperCase());
+                aircraft.setModel(request.getModel().trim());
+                aircraft.setManufacturer(request.getManufacturer().trim());
 
-    @Override
-    @Transactional(readOnly = true)
-    public AircraftResDTO getAircraftById(Long id) {
+                aircraft.setEconomySeats(request.getEconomySeats());
+                aircraft.setPremiumEconomySeats(request.getPremiumEconomySeats());
+                aircraft.setBusinessSeats(request.getBusinessSeats());
+                aircraft.setFirstClassSeats(request.getFirstClassSeats());
 
-        Aircraft aircraft = aircraftRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + id + " not found."));
+                aircraft.setActive(
+                                request.getActive() == null ? aircraft.getActive() : request.getActive());
 
-        return aircraftMapper.toDto(aircraft);
-    }
+                aircraft.setAirline(airline);
 
-    @Override
-    @Transactional
-    public void deleteAircraft(Long id) {
+                Aircraft updatedAircraft = aircraftRepository.save(aircraft);
 
-        Aircraft aircraft = aircraftRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + id + " not found."));
+                return aircraftMapper.toDto(updatedAircraft);
+        }
 
-        aircraftRepository.delete(aircraft);
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public AircraftResDTO getAircraftById(Long id) {
 
-    @Override
-    @Transactional
-    public AircraftResDTO deactivateAircraft(Long aircraftId) {
+                Aircraft aircraft = aircraftRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + id + " not found."));
 
-        Aircraft aircraft = aircraftRepository.findById(aircraftId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Aircraft with ID " + aircraftId + " not found."));
+                return aircraftMapper.toDto(aircraft);
+        }
 
-        aircraft.setActive(false);
+        @Override
+        @Transactional
+        public void deleteAircraft(Long id) {
 
-        Aircraft updatedAircraft = aircraftRepository.save(aircraft);
+                Aircraft aircraft = aircraftRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + id + " not found."));
 
-        return aircraftMapper.toDto(updatedAircraft);
-    }
+                aircraftRepository.delete(aircraft);
+        }
+
+        @Override
+        @Transactional
+        public AircraftResDTO deactivateAircraft(Long aircraftId) {
+
+                Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Aircraft with ID " + aircraftId + " not found."));
+
+                aircraft.setActive(false);
+
+                Aircraft updatedAircraft = aircraftRepository.save(aircraft);
+
+                return aircraftMapper.toDto(updatedAircraft);
+        }
+
+        @Override
+        public void validateCabinAvailability(
+                        Aircraft aircraft,
+                        CabinClass cabinClass) {
+
+                boolean available = switch (cabinClass) {
+
+                        case ECONOMY ->
+                                aircraft.getEconomySeats() > 0;
+
+                        case PREMIUM_ECONOMY ->
+                                aircraft.getPremiumEconomySeats() > 0;
+
+                        case BUSINESS ->
+                                aircraft.getBusinessSeats() > 0;
+
+                        case FIRST ->
+                                aircraft.getFirstClassSeats() > 0;
+                };
+
+                if (!available) {
+                        throw new IllegalArgumentException(
+                                        cabinClass + " cabin is not available for aircraft "
+                                                        + aircraft.getModel());
+                }
+        }
+
+        @Override
+        public boolean isCabinAvailable(Long aircraftId, CabinClass cabinClass) {
+
+                Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                                .orElseThrow(() -> new AircraftNotFoundException(aircraftId));
+
+                return aircraft.isCabinAvailable(cabinClass);
+        }
 }

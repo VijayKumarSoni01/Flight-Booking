@@ -37,4 +37,6 @@ public interface SeatService {
         Integer seatCount,
         String bookingReference);
 
+        void generateSeats(Long flightId);
+
 }

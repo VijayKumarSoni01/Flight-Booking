@@ -117,4 +117,15 @@ public class FlightBookingController {
 
                 return ResponseEntity.ok(response);
         }
+
+        @Operation(summary = "Generate Seats", description = "Generates all seats for the specified flight based on the assigned aircraft configuration.")
+        @PostMapping("/{flightId}/generate-seats")
+        public ResponseEntity<String> generateSeats(
+                        @PathVariable Long flightId) {
+
+                seatService.generateSeats(flightId);
+
+                return ResponseEntity.ok(
+                                "Seats generated successfully for Flight ID: " + flightId);
+        }
 }

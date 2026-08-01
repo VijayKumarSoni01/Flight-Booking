@@ -299,6 +299,66 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
+    public BookingConfirmationResponse confirmBooking(Long bookingId) {
+
+        // Booking booking = bookingRepository.findById(bookingId)
+        //         .orElseThrow(() -> new BookingNotFoundException(
+        //                 "Booking not found with ID: " + bookingId));
+
+        // if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
+        //     throw new IllegalStateException(
+        //             "Booking is already confirmed.");
+        // }
+
+        // if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+        //     throw new IllegalStateException(
+        //             "Cancelled booking cannot be confirmed.");
+        // }
+
+        // // =====================================================
+        // // TODO: Payment validation
+        // // Payment must be SUCCESS before confirming booking.
+        // // =====================================================
+
+        // // if (booking.getPaymentStatus() != PaymentStatus.SUCCESS) {
+        // // throw new IllegalStateException(
+        // // "Payment is not completed.");
+        // // }
+
+        // // =====================================================
+        // // Generate PNR
+        // // =====================================================
+
+        // if (booking.getPnr() == null || booking.getPnr().isBlank()) {
+        //     booking.setPnr(pnrGenerator.generatePNR());
+        // }
+
+        // // =====================================================
+        // // Update Booking Status
+        // // =====================================================
+
+        // booking.setBookingStatus(BookingStatus.CONFIRMED);
+
+        // Booking savedBooking = bookingRepository.save(booking);
+
+        // // =====================================================
+        // // TODO:
+        // // Call Flight Management Service
+        // // POST /api/private/flights/seats/confirm/{bookingReference}
+        // // =====================================================
+
+        // return BookingConfirmationResponse.builder()
+        //         .bookingId(savedBooking.getId())
+        //         .bookingReference(savedBooking.getBookingReference())
+        //         .pnr(savedBooking.getPnr())
+        //         .bookingStatus(savedBooking.getBookingStatus())
+        //         .message("Booking confirmed successfully.")
+        //         .build();
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<BookingSummaryResponse> getBookingsByUser(Long userId) {
 

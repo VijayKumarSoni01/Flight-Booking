@@ -54,4 +54,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
             Long flightId,
             CabinClass cabinClass,
             SeatStatus seatStatus);
+
+            boolean existsByFlightId(Long flightId);
 }
