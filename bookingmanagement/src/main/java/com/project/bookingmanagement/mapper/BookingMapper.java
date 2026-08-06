@@ -11,6 +11,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.project.bookingmanagement.dto.booking.request.CreateBookingRequest;
 import com.project.bookingmanagement.dto.booking.request.UpdateBookingRequest;
+import com.project.bookingmanagement.dto.booking.response.BookingCancellationResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingConfirmationResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingDetailsResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingResponse;
@@ -102,4 +103,11 @@ public interface BookingMapper {
         @Mapping(source = "totalAmount", target = "totalFare")
         @Mapping(target = "message", ignore = true)
         BookingConfirmationResponse toConfirmationResponse(Booking booking);
+
+        @Mapping(source = "id", target = "bookingId")
+        @Mapping(target = "refundInitiated", ignore = true)
+        @Mapping(target = "refundAmount", ignore = true)
+        @Mapping(target = "gatewayRefundId", ignore = true)
+        @Mapping(target = "message", ignore = true)
+        BookingCancellationResponse toCancellationResponse(Booking booking);
 }

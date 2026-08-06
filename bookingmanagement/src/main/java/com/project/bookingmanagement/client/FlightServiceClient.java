@@ -1,6 +1,6 @@
 package com.project.bookingmanagement.client;
 
-import java.util.List;
+// import java.util.List;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +11,7 @@ import com.project.bookingmanagement.dto.external.flight.FlightResponse;
 import com.project.bookingmanagement.dto.external.flight.SeatAvailabilityResponse;
 import com.project.bookingmanagement.dto.external.flight.SeatReservationRequest;
 import com.project.bookingmanagement.dto.external.flight.SeatReservationResponse;
-import com.project.bookingmanagement.dto.external.flight.SeatResponse;
+// import com.project.bookingmanagement.dto.external.flight.SeatResponse;
 
 @FeignClient(name = "flight-management", url = "${flight.service.url}", path = "/api/private/flights", contextId = "flightServiceClient", configuration = FeignConfig.class)
 public interface FlightServiceClient {

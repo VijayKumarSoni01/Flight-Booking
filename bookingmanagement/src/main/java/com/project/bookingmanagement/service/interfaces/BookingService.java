@@ -2,8 +2,10 @@ package com.project.bookingmanagement.service.interfaces;
 
 import java.util.List;
 
+import com.project.bookingmanagement.dto.booking.internal.BookingValidationResponse;
 import com.project.bookingmanagement.dto.booking.request.CancelBookingRequest;
 import com.project.bookingmanagement.dto.booking.request.CreateBookingRequest;
+import com.project.bookingmanagement.dto.booking.request.UpdateBookingPaymentStatusReqDTO;
 import com.project.bookingmanagement.dto.booking.request.UpdateBookingRequest;
 import com.project.bookingmanagement.dto.booking.response.BookingCancellationResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingConfirmationResponse;
@@ -33,4 +35,11 @@ public interface BookingService {
         CancelBookingRequest request);
 
          BookingConfirmationResponse confirmBooking(Long bookingId);
+
+         void updatePaymentStatus(
+        Long bookingId,
+        UpdateBookingPaymentStatusReqDTO request);
+
+        BookingValidationResponse getBookingValidationByReference(
+        String bookingReference);
 }

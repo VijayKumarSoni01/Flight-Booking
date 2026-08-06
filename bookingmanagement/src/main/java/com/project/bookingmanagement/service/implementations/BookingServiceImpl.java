@@ -8,15 +8,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.bookingmanagement.client.FlightServiceClient;
+import com.project.bookingmanagement.client.PaymentServiceClient;
 import com.project.bookingmanagement.config.security.SecurityUtil;
+import com.project.bookingmanagement.dto.booking.internal.BookingValidationResponse;
 import com.project.bookingmanagement.dto.booking.request.CancelBookingRequest;
 import com.project.bookingmanagement.dto.booking.request.CreateBookingRequest;
+import com.project.bookingmanagement.dto.booking.request.RefundPaymentReqDTO;
+import com.project.bookingmanagement.dto.booking.request.UpdateBookingPaymentStatusReqDTO;
 import com.project.bookingmanagement.dto.booking.request.UpdateBookingRequest;
 import com.project.bookingmanagement.dto.booking.response.BookingCancellationResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingConfirmationResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingDetailsResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingSummaryResponse;
+import com.project.bookingmanagement.dto.booking.response.RefundResponseDTO;
+import com.project.bookingmanagement.dto.common.ApiResponse;
 import com.project.bookingmanagement.dto.external.flight.FlightFareResponse;
 import com.project.bookingmanagement.dto.external.flight.FlightResponse;
 import com.project.bookingmanagement.dto.external.flight.SeatAvailabilityResponse;
@@ -28,6 +34,7 @@ import com.project.bookingmanagement.enums.bookingEnum.BookingStatus;
 import com.project.bookingmanagement.enums.bookingEnum.PaymentStatus;
 import com.project.bookingmanagement.enums.bookingPassangerEnum.CabinClass;
 import com.project.bookingmanagement.exception.BookingAlreadyCancelledException;
+import com.project.bookingmanagement.exception.BookingCancellationException;
 import com.project.bookingmanagement.exception.BookingNotFoundException;
 import com.project.bookingmanagement.exception.ExternalServiceException;
 import com.project.bookingmanagement.exception.FlightNotAvailableException;
@@ -40,445 +47,751 @@ import com.project.bookingmanagement.util.BookingReferenceGenerator;
 import com.project.bookingmanagement.util.PnrGenerator;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class BookingServiceImpl implements BookingService {
 
-    private final BookingRepository bookingRepository;
-    private final BookingMapper bookingMapper;
-    private final PassengerMapper passengerMapper;
-    private final FlightServiceClient flightServiceClient;
-    private final BookingReferenceGenerator bookingReferenceGenerator;
-    private final PnrGenerator pnrGenerator;
-    private final SecurityUtil securityUtil;
+        private static final Logger log = LoggerFactory.getLogger(BookingServiceImpl.class);
 
-    @Override
-    @Transactional
-    public BookingConfirmationResponse createBooking(CreateBookingRequest request) {
+        private final BookingRepository bookingRepository;
+        private final BookingMapper bookingMapper;
+        private final PassengerMapper passengerMapper;
+        private final FlightServiceClient flightServiceClient;
+        private final BookingReferenceGenerator bookingReferenceGenerator;
+        private final PnrGenerator pnrGenerator;
+        private final SecurityUtil securityUtil;
+        private final PaymentServiceClient paymentServiceClient;
 
-        try {
+        @Override
+        @Transactional
+        public BookingConfirmationResponse createBooking(
+                        CreateBookingRequest request) {
 
-            // 1. Validate Flight
-            validateFlight(request.getFlightId());
+                log.info("Creating booking for UserId={}, FlightId={}",
+                                securityUtil.getCurrentUserId(),
+                                request.getFlightId());
 
-            FlightResponse flight = getFlight(request.getFlightId());
+                try {
 
-            // 2. Check Seat Availability
-            checkSeatAvailability(
-                    request.getFlightId(),
-                    request.getCabinClass(),
-                    request.getPassengers().size());
+                        // Step 1 : Validate Flight
+                        validateFlight(request.getFlightId());
 
-            // 3. Get Flight Fare
-            FlightFareResponse fare = getFlightFare(
-                    request.getFlightId(),
-                    request.getCabinClass());
+                        // Step 2 : Fetch Flight Details
+                        FlightResponse flight = getFlight(request.getFlightId());
 
-            if (fare == null) {
-                throw new FlightNotAvailableException(
-                        "Unable to fetch flight fare.");
-            }
+                        // Step 3 : Check Seat Availability
+                        checkSeatAvailability(
+                                        request.getFlightId(),
+                                        request.getCabinClass(),
+                                        request.getPassengers().size());
 
-            // 4. Calculate Total Fare
-            BigDecimal totalFare = calculateTotalFare(
-                    request.getPassengers(),
-                    fare);
+                        // Step 4 : Fetch Fare
+                        FlightFareResponse fare = getFlightFare(
+                                        request.getFlightId(),
+                                        request.getCabinClass());
 
-            // 5. Create Booking Entity
-            Booking booking = bookingMapper.toEntity(request);
+                        // Step 5 : Calculate Total Fare
+                        BigDecimal totalFare = calculateTotalFare(
+                                        request.getPassengers(),
+                                        fare);
 
-            booking.setUserId(
-                    securityUtil.getCurrentUserId());
+                        // Step 6 : Create Booking
+                        Booking booking = bookingMapper.toEntity(request);
 
-            booking.setBookingReference(
-                    bookingReferenceGenerator.generate());
+                        booking.setUserId(
+                                        securityUtil.getCurrentUserId());
 
-            booking.setPnr(
-                    pnrGenerator.generate());
+                        booking.setBookingReference(
+                                        bookingReferenceGenerator.generate());
 
-            booking.setBookingStatus(BookingStatus.PENDING);
-            booking.setPaymentStatus(PaymentStatus.PENDING);
-            booking.setBookingDate(LocalDateTime.now());
+                        booking.setPnr(
+                                        pnrGenerator.generate());
 
-            if (flight.getDepartureTime() == null) {
-                throw new FlightNotAvailableException(
-                        "Flight departure time is unavailable.");
-            }
+                        booking.setBookingStatus(
+                                        BookingStatus.PENDING);
 
-            booking.setTravelDate(
-                    flight.getDepartureTime().toLocalDate());
+                        booking.setPaymentStatus(
+                                        PaymentStatus.PENDING);
 
-            booking.setCurrency(fare.getCurrency());
-            booking.setTotalPassengers(request.getPassengers().size());
-            booking.setTotalAmount(totalFare);
+                        booking.setBookingDate(
+                                        LocalDateTime.now());
 
-            // 6. Map Passengers
-            List<BookingPassenger> passengers = request.getPassengers()
-                    .stream()
-                    .map(passengerMapper::toEntity)
-                    .peek(passenger -> passenger.setBooking(booking))
-                    .toList();
+                        booking.setTravelDate(
+                                        flight.getDepartureTime().toLocalDate());
 
-            booking.setPassengers(passengers);
+                        booking.setCurrency(
+                                        fare.getCurrency());
 
-            // 7. Save Booking
-            Booking savedBooking = bookingRepository.save(booking);
+                        booking.setTotalPassengers(
+                                        request.getPassengers().size());
 
-            // 8. Reserve Seats
-            SeatReservationRequest seatRequest = new SeatReservationRequest();
+                        booking.setTotalAmount(
+                                        totalFare);
 
-            seatRequest.setCabinClass(request.getCabinClass());
-            seatRequest.setSeatCount(request.getPassengers().size());
-            seatRequest.setBookingReference(savedBooking.getBookingReference());
+                        // Step 7 : Add Passengers
+                        List<BookingPassenger> passengers = request.getPassengers()
+                                        .stream()
+                                        .map(passengerMapper::toEntity)
+                                        .peek(passenger -> passenger.setBooking(booking))
+                                        .toList();
 
-            flightServiceClient.reserveSeats(
-                    request.getFlightId(),
-                    seatRequest);
+                        booking.setPassengers(passengers);
 
-            // 9. Build Response
-            BookingConfirmationResponse response = bookingMapper.toConfirmationResponse(savedBooking);
+                        // Step 8 : Save Booking
+                        Booking savedBooking = bookingRepository.save(booking);
 
-            response.setMessage(
-                    "Booking created successfully. Seats reserved. Awaiting payment.");
+                        log.info("Booking created successfully. BookingReference={}",
+                                        savedBooking.getBookingReference());
 
-            return response;
+                        // Step 9 : Reserve Seats
+                        SeatReservationRequest seatRequest = new SeatReservationRequest();
 
-        } catch (FlightNotAvailableException
-                | SeatAlreadyBookedException e) {
+                        seatRequest.setCabinClass(
+                                        request.getCabinClass());
 
-            throw e;
+                        seatRequest.setSeatCount(
+                                        request.getPassengers().size());
 
-        } catch (feign.FeignException e) {
+                        seatRequest.setBookingReference(
+                                        savedBooking.getBookingReference());
 
-            throw new ExternalServiceException(
-                    "Flight Management Service",
-                    "Unable to communicate with Flight Management.",
-                    e);
-        }
-    }
+                        flightServiceClient.reserveSeats(
+                                        request.getFlightId(),
+                                        seatRequest);
 
-    private void validateFlight(Long flightId) {
+                        log.info("Seats reserved successfully for BookingReference={}",
+                                        savedBooking.getBookingReference());
 
-        Boolean valid = flightServiceClient.validateFlight(flightId);
+                        // Step 10 : Build Response
+                        BookingConfirmationResponse response = bookingMapper.toConfirmationResponse(savedBooking);
 
-        if (Boolean.FALSE.equals(valid)) {
-            throw new FlightNotAvailableException(flightId);
-        }
-    }
+                        response.setMessage(
+                                        "Booking created successfully. Seats reserved. Awaiting payment.");
 
-    private FlightResponse getFlight(Long flightId) {
+                        return response;
 
-        FlightResponse flight = flightServiceClient.getFlightById(flightId);
+                } catch (FlightNotAvailableException
+                                | SeatAlreadyBookedException ex) {
 
-        if (flight == null) {
-            throw new FlightNotAvailableException(flightId);
-        }
+                        log.error("Booking validation failed.", ex);
+                        throw ex;
 
-        return flight;
-    }
+                } catch (feign.FeignException ex) {
 
-    private void checkSeatAvailability(
-            Long flightId,
-            CabinClass cabinClass,
-            int passengerCount) {
+                        log.error("Flight Service communication failed.", ex);
 
-        SeatAvailabilityResponse availability = flightServiceClient.checkSeatAvailability(
-                flightId,
-                cabinClass.name());
+                        throw new ExternalServiceException(
+                                        "Flight Management Service",
+                                        "Unable to communicate with Flight Management.",
+                                        ex);
 
-        if (availability == null
-                || availability.getAvailableSeats() == null
-                || availability.getAvailableSeats() < passengerCount) {
+                } catch (Exception ex) {
 
-            throw new SeatAlreadyBookedException(
-                    "Requested seats are not available.");
-        }
-    }
-
-    private FlightFareResponse getFlightFare(
-            Long flightId,
-            CabinClass cabinClass) {
-
-        FlightFareResponse fare = flightServiceClient.getFlightFare(
-                flightId,
-                cabinClass.name());
-
-        if (fare == null) {
-            throw new FlightNotAvailableException(
-                    "Unable to fetch flight fare.");
+                        log.error("Unexpected error while creating booking.", ex);
+                        throw ex;
+                }
         }
 
-        return fare;
-    }
+        private void validateFlight(Long flightId) {
 
-    private BigDecimal calculateTotalFare(
-            List<AddPassengerRequest> passengers,
-            FlightFareResponse fare) {
+                log.info("Validating FlightId={}", flightId);
 
-        BigDecimal totalFare = BigDecimal.ZERO;
+                Boolean valid = flightServiceClient.validateFlight(flightId);
 
-        for (AddPassengerRequest passenger : passengers) {
+                if (Boolean.FALSE.equals(valid)) {
 
-            switch (passenger.getPassengerType()) {
+                        log.warn("Flight {} is not available.", flightId);
 
-                case ADULT ->
-                    totalFare = totalFare.add(fare.getAdultFare());
+                        throw new FlightNotAvailableException(flightId);
+                }
 
-                case CHILD ->
-                    totalFare = totalFare.add(fare.getChildFare());
-
-                case INFANT ->
-                    totalFare = totalFare.add(fare.getInfantFare());
-            }
+                log.info("Flight validation successful. FlightId={}", flightId);
         }
 
-        return totalFare;
-    }
+        private FlightResponse getFlight(Long flightId) {
 
-    @Override
-    @Transactional(readOnly = true)
-    public BookingResponse getBookingByReference(String bookingReference) {
+                log.info("Fetching Flight Details. FlightId={}", flightId);
 
-        Booking booking = bookingRepository.findByBookingReference(bookingReference)
-                .orElseThrow(() -> new BookingNotFoundException(
-                        "Booking not found with reference: " + bookingReference));
+                FlightResponse flight = flightServiceClient.getFlightById(flightId);
 
-        BookingResponse response = bookingMapper.toResponse(booking);
+                if (flight == null) {
 
-        FlightResponse flight = flightServiceClient.getFlightById(
-                booking.getFlightId());
+                        log.warn("Flight details not found. FlightId={}", flightId);
 
-        populateBookingResponse(response, flight);
+                        throw new FlightNotAvailableException(flightId);
+                }
 
-        return response;
-    }
+                log.info("Flight fetched successfully. FlightNumber={}",
+                                flight.getFlightNumber());
 
-    @Override
-    @Transactional(readOnly = true)
-    public BookingDetailsResponse getBookingById(Long bookingId) {
-
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException(
-                        "Booking not found with id: " + bookingId));
-
-        BookingDetailsResponse response = bookingMapper.toDetailsResponse(booking);
-
-        FlightResponse flight = flightServiceClient.getFlightById(
-                booking.getFlightId());
-
-        populateDetailsFlightInformation(response, flight);
-
-        return response;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BookingSummaryResponse> getAllBookings() {
-
-        List<Booking> bookings = bookingRepository.findAll();
-
-        if (bookings.isEmpty()) {
-            return List.of();
+                return flight;
         }
 
-        List<BookingSummaryResponse> responses = bookingMapper.toSummaryResponseList(bookings);
+        private void checkSeatAvailability(
+                        Long flightId,
+                        CabinClass cabinClass,
+                        int passengerCount) {
 
-        for (int i = 0; i < bookings.size(); i++) {
+                log.info(
+                                "Checking seat availability. FlightId={}, CabinClass={}, Passengers={}",
+                                flightId,
+                                cabinClass,
+                                passengerCount);
 
-            FlightResponse flight = flightServiceClient.getFlightById(
-                    bookings.get(i).getFlightId());
+                SeatAvailabilityResponse availability = flightServiceClient.checkSeatAvailability(
+                                flightId,
+                                cabinClass.name());
 
-            populateSummaryFlightDetails(
-                    responses.get(i),
-                    flight);
+                if (availability == null
+                                || availability.getAvailableSeats() == null
+                                || availability.getAvailableSeats() < passengerCount) {
+
+                        log.warn(
+                                        "Insufficient seats. Available={}, Requested={}",
+                                        availability == null ? 0 : availability.getAvailableSeats(),
+                                        passengerCount);
+
+                        throw new SeatAlreadyBookedException(
+                                        "Requested seats are not available.");
+                }
+
+                log.info("Seat availability verified successfully.");
         }
 
-        return responses;
-    }
+        private FlightFareResponse getFlightFare(
+                        Long flightId,
+                        CabinClass cabinClass) {
 
-    @Override
-    @Transactional
-    public BookingConfirmationResponse confirmBooking(Long bookingId) {
+                log.info(
+                                "Fetching fare. FlightId={}, CabinClass={}",
+                                flightId,
+                                cabinClass);
 
-        // Booking booking = bookingRepository.findById(bookingId)
-        //         .orElseThrow(() -> new BookingNotFoundException(
-        //                 "Booking not found with ID: " + bookingId));
+                FlightFareResponse fare = flightServiceClient.getFlightFare(
+                                flightId,
+                                cabinClass.name());
 
-        // if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
-        //     throw new IllegalStateException(
-        //             "Booking is already confirmed.");
-        // }
+                if (fare == null) {
 
-        // if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
-        //     throw new IllegalStateException(
-        //             "Cancelled booking cannot be confirmed.");
-        // }
+                        log.warn("Fare not found for FlightId={}", flightId);
 
-        // // =====================================================
-        // // TODO: Payment validation
-        // // Payment must be SUCCESS before confirming booking.
-        // // =====================================================
+                        throw new FlightNotAvailableException(
+                                        "Unable to fetch flight fare.");
+                }
 
-        // // if (booking.getPaymentStatus() != PaymentStatus.SUCCESS) {
-        // // throw new IllegalStateException(
-        // // "Payment is not completed.");
-        // // }
+                log.info("Fare fetched successfully.");
 
-        // // =====================================================
-        // // Generate PNR
-        // // =====================================================
-
-        // if (booking.getPnr() == null || booking.getPnr().isBlank()) {
-        //     booking.setPnr(pnrGenerator.generatePNR());
-        // }
-
-        // // =====================================================
-        // // Update Booking Status
-        // // =====================================================
-
-        // booking.setBookingStatus(BookingStatus.CONFIRMED);
-
-        // Booking savedBooking = bookingRepository.save(booking);
-
-        // // =====================================================
-        // // TODO:
-        // // Call Flight Management Service
-        // // POST /api/private/flights/seats/confirm/{bookingReference}
-        // // =====================================================
-
-        // return BookingConfirmationResponse.builder()
-        //         .bookingId(savedBooking.getId())
-        //         .bookingReference(savedBooking.getBookingReference())
-        //         .pnr(savedBooking.getPnr())
-        //         .bookingStatus(savedBooking.getBookingStatus())
-        //         .message("Booking confirmed successfully.")
-        //         .build();
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BookingSummaryResponse> getBookingsByUser(Long userId) {
-
-        List<Booking> bookings = bookingRepository.findByUserId(userId);
-
-        List<BookingSummaryResponse> responses = bookingMapper.toSummaryResponseList(bookings);
-
-        for (int i = 0; i < bookings.size(); i++) {
-
-            FlightResponse flight = flightServiceClient.getFlightById(
-                    bookings.get(i).getFlightId());
-
-            populateSummaryFlightDetails(
-                    responses.get(i),
-                    flight);
+                return fare;
         }
 
-        return responses;
-    }
+        private BigDecimal calculateTotalFare(
+                        List<AddPassengerRequest> passengers,
+                        FlightFareResponse fare) {
 
-    @Override
-    @Transactional
-    public BookingResponse updateBooking(
-            Long bookingId,
-            UpdateBookingRequest request) {
+                BigDecimal totalFare = BigDecimal.ZERO;
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException(
-                        "Booking not found with id: " + bookingId));
+                for (AddPassengerRequest passenger : passengers) {
 
-        bookingMapper.updateBooking(request, booking);
+                        switch (passenger.getPassengerType()) {
 
-        Booking updatedBooking = bookingRepository.save(booking);
+                                case ADULT ->
+                                        totalFare = totalFare.add(fare.getAdultFare());
 
-        BookingResponse response = bookingMapper.toResponse(updatedBooking);
+                                case CHILD ->
+                                        totalFare = totalFare.add(fare.getChildFare());
 
-        FlightResponse flight = flightServiceClient.getFlightById(
-                updatedBooking.getFlightId());
+                                case INFANT ->
+                                        totalFare = totalFare.add(fare.getInfantFare());
+                        }
+                }
 
-        populateBookingResponse(response, flight);
+                log.info("Total fare calculated: {}", totalFare);
 
-        return response;
-    }
-
-    @Override
-    @Transactional
-    public BookingCancellationResponse cancelBooking(
-            Long bookingId,
-            CancelBookingRequest request) {
-
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException(
-                        "Booking not found with id: " + bookingId));
-
-        if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
-            throw new BookingAlreadyCancelledException(
-                    "Booking is already cancelled.");
+                return totalFare;
         }
 
-        booking.setBookingStatus(BookingStatus.CANCELLED);
+        @Override
+        @Transactional(readOnly = true)
+        public BookingResponse getBookingByReference(
+                        String bookingReference) {
 
-        booking.setCancellationReason(request.getCancellationReason());
-        booking.setCancelledAt(LocalDateTime.now());
+                log.info(
+                                "Fetching booking by reference: {}",
+                                bookingReference);
 
-        Booking cancelledBooking = bookingRepository.save(booking);
+                Booking booking = bookingRepository
+                                .findByBookingReference(bookingReference)
+                                .orElseThrow(() -> {
 
-        BookingCancellationResponse response = new BookingCancellationResponse();
+                                        log.warn(
+                                                        "Booking not found. Reference={}",
+                                                        bookingReference);
 
-        response.setBookingId(cancelledBooking.getId());
-        response.setBookingReference(cancelledBooking.getBookingReference());
-        response.setPnr(cancelledBooking.getPnr());
-        response.setBookingStatus(cancelledBooking.getBookingStatus());
-        response.setCancelledAt(cancelledBooking.getCancelledAt());
-        response.setMessage("Booking cancelled successfully.");
+                                        return new BookingNotFoundException(
+                                                        "Booking not found with reference: "
+                                                                        + bookingReference);
+                                });
 
-        return response;
-    }
+                BookingResponse response = bookingMapper.toResponse(booking);
 
-    private void populateBookingResponse(
-            BookingResponse response,
-            FlightResponse flight) {
+                FlightResponse flight = flightServiceClient.getFlightById(
+                                booking.getFlightId());
 
-        if (flight == null) {
-            return;
+                populateBookingResponse(
+                                response,
+                                flight);
+
+                log.info(
+                                "Booking fetched successfully. Reference={}",
+                                bookingReference);
+
+                return response;
         }
 
-        response.setFlightNumber(flight.getFlightNumber());
-        response.setAirlineName(flight.getAirlineName());
-        response.setSourceAirport(flight.getSourceAirport());
-        response.setDestinationAirport(flight.getDestinationAirport());
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public BookingDetailsResponse getBookingById(
+                        Long bookingId) {
 
-    private void populateSummaryFlightDetails(
-            BookingSummaryResponse response,
-            FlightResponse flight) {
+                log.info(
+                                "Fetching booking details. BookingId={}",
+                                bookingId);
 
-        if (flight == null) {
-            return;
+                Booking booking = bookingRepository
+                                .findById(bookingId)
+                                .orElseThrow(() -> {
+
+                                        log.warn(
+                                                        "Booking not found. BookingId={}",
+                                                        bookingId);
+
+                                        return new BookingNotFoundException(
+                                                        "Booking not found with id: "
+                                                                        + bookingId);
+                                });
+
+                BookingDetailsResponse response = bookingMapper.toDetailsResponse(booking);
+
+                FlightResponse flight = flightServiceClient.getFlightById(
+                                booking.getFlightId());
+
+                populateDetailsFlightInformation(
+                                response,
+                                flight);
+
+                log.info(
+                                "Booking details fetched successfully. BookingId={}",
+                                bookingId);
+
+                return response;
         }
 
-        response.setFlightNumber(flight.getFlightNumber());
-        response.setAirlineName(flight.getAirlineName());
-        response.setSourceAirport(flight.getSourceAirport());
-        response.setDestinationAirport(flight.getDestinationAirport());
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public List<BookingSummaryResponse> getAllBookings() {
 
-    private void populateDetailsFlightInformation(
-            BookingDetailsResponse response,
-            FlightResponse flight) {
+                log.info("Fetching all bookings.");
 
-        if (flight == null) {
-            return;
+                List<Booking> bookings = bookingRepository.findAll();
+
+                if (bookings.isEmpty()) {
+
+                        log.info("No bookings found.");
+
+                        return List.of();
+                }
+
+                List<BookingSummaryResponse> responses = bookingMapper.toSummaryResponseList(bookings);
+
+                for (int i = 0; i < bookings.size(); i++) {
+
+                        FlightResponse flight = flightServiceClient.getFlightById(
+                                        bookings.get(i).getFlightId());
+
+                        populateSummaryFlightDetails(
+                                        responses.get(i),
+                                        flight);
+                }
+
+                log.info(
+                                "Fetched {} bookings successfully.",
+                                bookings.size());
+
+                return responses;
         }
 
-        response.setFlightNumber(flight.getFlightNumber());
-        response.setAirlineName(flight.getAirlineName());
-        response.setSourceAirport(flight.getSourceAirport());
-        response.setDestinationAirport(flight.getDestinationAirport());
-        response.setDepartureTime(flight.getDepartureTime());
-        response.setArrivalTime(flight.getArrivalTime());
-    }
+        @Override
+        @Transactional
+        public BookingConfirmationResponse confirmBooking(Long bookingId) {
 
+                Booking booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(() -> new BookingNotFoundException(
+                                                "Booking not found with ID: " + bookingId));
+
+                if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
+                        throw new IllegalStateException(
+                                        "Booking is already confirmed.");
+                }
+
+                if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+                        throw new IllegalStateException(
+                                        "Cancelled booking cannot be confirmed.");
+                }
+
+                if (booking.getPaymentStatus() != PaymentStatus.SUCCESS) {
+                        throw new IllegalStateException(
+                                        "Payment is not completed.");
+                }
+
+                if (booking.getPnr() == null || booking.getPnr().isBlank()) {
+                        booking.setPnr(pnrGenerator.generate());
+                }
+
+                booking.setBookingStatus(BookingStatus.CONFIRMED);
+
+                Booking savedBooking = bookingRepository.save(booking);
+
+                // Confirm seats in Flight Service
+                flightServiceClient.confirmSeats(
+                                savedBooking.getBookingReference());
+
+                return BookingConfirmationResponse.builder()
+                                .bookingId(savedBooking.getId())
+                                .bookingReference(savedBooking.getBookingReference())
+                                .pnr(savedBooking.getPnr())
+                                .bookingStatus(savedBooking.getBookingStatus())
+                                .paymentStatus(savedBooking.getPaymentStatus())
+                                .bookingDate(savedBooking.getBookingDate())
+                                .totalFare(savedBooking.getTotalAmount())
+                                .message("Booking confirmed successfully.")
+                                .build();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<BookingSummaryResponse> getBookingsByUser(
+                        Long userId) {
+
+                log.info(
+                                "Fetching bookings for UserId={}",
+                                userId);
+
+                List<Booking> bookings = bookingRepository.findByUserId(userId);
+
+                if (bookings.isEmpty()) {
+
+                        log.info(
+                                        "No bookings found for UserId={}",
+                                        userId);
+
+                        return List.of();
+                }
+
+                List<BookingSummaryResponse> responses = bookingMapper.toSummaryResponseList(bookings);
+
+                for (int i = 0; i < bookings.size(); i++) {
+
+                        FlightResponse flight = flightServiceClient.getFlightById(
+                                        bookings.get(i).getFlightId());
+
+                        populateSummaryFlightDetails(
+                                        responses.get(i),
+                                        flight);
+                }
+
+                log.info(
+                                "Fetched {} bookings for UserId={}",
+                                bookings.size(),
+                                userId);
+
+                return responses;
+        }
+
+        @Override
+        @Transactional
+        public BookingResponse updateBooking(
+                        Long bookingId,
+                        UpdateBookingRequest request) {
+
+                log.info(
+                                "Updating booking. BookingId={}",
+                                bookingId);
+
+                Booking booking = bookingRepository
+                                .findById(bookingId)
+                                .orElseThrow(() -> {
+
+                                        log.warn(
+                                                        "Booking not found. BookingId={}",
+                                                        bookingId);
+
+                                        return new BookingNotFoundException(
+                                                        "Booking not found with id: "
+                                                                        + bookingId);
+                                });
+
+                bookingMapper.updateBooking(
+                                request,
+                                booking);
+
+                Booking updatedBooking = bookingRepository.save(booking);
+
+                BookingResponse response = bookingMapper.toResponse(updatedBooking);
+
+                FlightResponse flight = flightServiceClient.getFlightById(
+                                updatedBooking.getFlightId());
+
+                populateBookingResponse(
+                                response,
+                                flight);
+
+                log.info(
+                                "Booking updated successfully. BookingId={}",
+                                bookingId);
+
+                return response;
+        }
+
+        @Override
+        @Transactional
+        public BookingCancellationResponse cancelBooking(
+                        Long bookingId,
+                        CancelBookingRequest request) {
+
+                log.info("Cancelling booking. BookingId={}", bookingId);
+
+                Booking booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(() -> {
+
+                                        log.warn("Booking not found. BookingId={}", bookingId);
+
+                                        return new BookingNotFoundException(
+                                                        "Booking not found with ID: " + bookingId);
+                                });
+
+                if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+
+                        log.warn("Booking already cancelled. BookingId={}", bookingId);
+
+                        throw new BookingAlreadyCancelledException(
+                                        "Booking is already cancelled.");
+                }
+
+                if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
+
+                        throw new BookingCancellationException(
+                                        "Only confirmed bookings can be cancelled.");
+                }
+
+                if (booking.getPaymentStatus() != PaymentStatus.SUCCESS) {
+
+                        throw new BookingCancellationException(
+                                        "Booking payment is not successful.");
+                }
+
+                try {
+
+                        // Refund Payment
+                        RefundPaymentReqDTO refundRequest = new RefundPaymentReqDTO();
+                        refundRequest.setBookingId(booking.getId());
+                        refundRequest.setRefundAmount(booking.getTotalAmount());
+                        refundRequest.setReason(request.getCancellationReason());
+
+                        log.info("Requesting refund for BookingId={}", booking.getId());
+
+                        ApiResponse<RefundResponseDTO> apiResponse = paymentServiceClient.refundPayment(refundRequest);
+
+                        RefundResponseDTO refundResponse = apiResponse.getData();
+
+                        log.info("Refund successful. GatewayRefundId={}",
+                                        refundResponse.getGatewayRefundId());
+
+                        // Release Seats
+                        log.info("Releasing seats for BookingReference={}",
+                                        booking.getBookingReference());
+
+                        flightServiceClient.releaseSeats(
+                                        booking.getBookingReference());
+
+                        log.info("Seats released successfully. BookingReference={}",
+                                        booking.getBookingReference());
+
+                        // Update Booking
+                        booking.setBookingStatus(BookingStatus.CANCELLED);
+                        booking.setPaymentStatus(PaymentStatus.REFUNDED);
+                        booking.setCancellationReason(request.getCancellationReason());
+                        booking.setCancelledAt(LocalDateTime.now());
+
+                        log.info("Step 3 - Before save");
+
+                        Booking cancelledBooking = bookingRepository.saveAndFlush(booking);
+
+                        log.info(
+                                        "Saved booking: status={}, paymentStatus={}, reason={}, cancelledAt={}, version={}",
+                                        cancelledBooking.getBookingStatus(),
+                                        cancelledBooking.getPaymentStatus(),
+                                        cancelledBooking.getCancellationReason(),
+                                        cancelledBooking.getCancelledAt(),
+                                        cancelledBooking.getVersion());
+
+                        log.info("Step 4 - After save");
+
+                        log.info("Booking cancelled successfully. BookingId={}",
+                                        cancelledBooking.getId());
+
+                        BookingCancellationResponse response = bookingMapper.toCancellationResponse(cancelledBooking);
+
+                        response.setRefundAmount(
+                                        refundResponse.getRefundAmount());
+
+                        response.setGatewayRefundId(
+                                        refundResponse.getGatewayRefundId());
+
+                        response.setMessage(
+                                        "Booking cancelled successfully.");
+
+                        return response;
+
+                } catch (Exception ex) {
+
+                        log.error("Booking cancellation failed. BookingId={}",
+                                        bookingId,
+                                        ex);
+
+                        throw new BookingCancellationException(
+                                        "Unable to cancel booking. Please try again later.");
+                }
+        }
+
+        private void populateBookingResponse(
+                        BookingResponse response,
+                        FlightResponse flight) {
+
+                if (flight == null) {
+                        return;
+                }
+
+                response.setFlightNumber(flight.getFlightNumber());
+                response.setAirlineName(flight.getAirlineName());
+                response.setSourceAirport(flight.getSourceAirport());
+                response.setDestinationAirport(flight.getDestinationAirport());
+        }
+
+        private void populateSummaryFlightDetails(
+                        BookingSummaryResponse response,
+                        FlightResponse flight) {
+
+                if (flight == null) {
+                        return;
+                }
+
+                response.setFlightNumber(flight.getFlightNumber());
+                response.setAirlineName(flight.getAirlineName());
+                response.setSourceAirport(flight.getSourceAirport());
+                response.setDestinationAirport(flight.getDestinationAirport());
+        }
+
+        private void populateDetailsFlightInformation(
+                        BookingDetailsResponse response,
+                        FlightResponse flight) {
+
+                if (flight == null) {
+                        return;
+                }
+
+                response.setFlightNumber(flight.getFlightNumber());
+                response.setAirlineName(flight.getAirlineName());
+                response.setSourceAirport(flight.getSourceAirport());
+                response.setDestinationAirport(flight.getDestinationAirport());
+                response.setDepartureTime(flight.getDepartureTime());
+                response.setArrivalTime(flight.getArrivalTime());
+        }
+
+        @Override
+        @Transactional
+        public void updatePaymentStatus(
+                        Long bookingId,
+                        UpdateBookingPaymentStatusReqDTO request) {
+
+                log.info(
+                                "Updating payment status. BookingId={}, PaymentStatus={}",
+                                bookingId,
+                                request.getPaymentStatus());
+
+                Booking booking = bookingRepository
+                                .findById(bookingId)
+                                .orElseThrow(() -> {
+
+                                        log.warn(
+                                                        "Booking not found. BookingId={}",
+                                                        bookingId);
+
+                                        return new BookingNotFoundException(
+                                                        "Booking not found.");
+                                });
+
+                booking.setPaymentStatus(
+                                request.getPaymentStatus());
+
+                bookingRepository.save(booking);
+
+                log.info(
+                                "Payment status updated successfully. BookingId={}",
+                                bookingId);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public BookingValidationResponse getBookingValidationByReference(
+                        String bookingReference) {
+
+                log.info(
+                                "Validating booking. Reference={}",
+                                bookingReference);
+
+                Booking booking = bookingRepository
+                                .findByBookingReference(bookingReference)
+                                .orElseThrow(() -> {
+
+                                        log.warn(
+                                                        "Booking not found. Reference={}",
+                                                        bookingReference);
+
+                                        return new BookingNotFoundException(
+                                                        "Booking not found.");
+                                });
+
+                BookingValidationResponse response = new BookingValidationResponse();
+
+                response.setBookingId(
+                                booking.getId());
+
+                response.setBookingReference(
+                                booking.getBookingReference());
+
+                response.setUserId(
+                                booking.getUserId());
+
+                response.setTotalAmount(
+                                booking.getTotalAmount());
+
+                response.setCurrency(
+                                booking.getCurrency().name());
+
+                response.setBookingStatus(
+                                booking.getBookingStatus());
+
+                response.setPaymentStatus(
+                                booking.getPaymentStatus());
+
+                log.info(
+                                "Booking validation completed. Reference={}",
+                                bookingReference);
+
+                return response;
+        }
 }

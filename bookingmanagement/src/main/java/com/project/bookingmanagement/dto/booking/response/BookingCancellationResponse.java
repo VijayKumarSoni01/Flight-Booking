@@ -6,9 +6,15 @@ import java.time.LocalDateTime;
 import com.project.bookingmanagement.enums.bookingEnum.BookingStatus;
 import com.project.bookingmanagement.enums.bookingEnum.PaymentStatus;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BookingCancellationResponse {
 
     private Long bookingId;
@@ -23,7 +29,11 @@ public class BookingCancellationResponse {
 
     private String cancellationReason;
 
+    private Boolean refundInitiated;
+
     private BigDecimal refundAmount;
+
+    private String gatewayRefundId;
 
     private LocalDateTime cancelledAt;
 

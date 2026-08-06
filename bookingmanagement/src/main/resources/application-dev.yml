@@ -18,6 +18,9 @@ flight:
   service:
     url: http://localhost:8082
 
+payment :
+  service:
+    url: http://localhost:8084
 springdoc:
   api-docs:
     enabled: true

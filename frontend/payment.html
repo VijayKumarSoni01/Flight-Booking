@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Razorpay Test</title>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+    <button onclick="payNow()">Pay ₹55</button>
+
+    <script>
+
+        const JWT =
+            "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sInVzZXJJZCI6MSwic3ViIjoic29uaXZrMTM0QGdtYWlsLmNvbSIsImlhdCI6MTc4NTk5Nzk2MCwiZXhwIjoxNzg1OTk5NzYwfQ.Oc0RdxM2-FR1znPilH5P7uCwGpmXWbNwv3yGblk-zrs";
+
+        async function payNow() {
+
+            try {
+
+                console.log("Calling Payment API...");
+
+                const response = await fetch(
+                    "http://localhost:8084/api/private/payments",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer " + JWT
+                        },
+
+                        body: JSON.stringify({
+
+                            bookingReference: "BK202608061E92D881",
+
+                            paymentMethod: "CARD",
+
+                            paymentGateway: "RAZORPAY",
+
+                            description: "Flight Booking"
+
+                        })
+
+                    });
+
+                console.log("HTTP Status:", response.status);
+
+                const result = await response.json();
+
+                console.log("Payment API Response:", result);
+
+                if (!result.success) {
+
+                    alert(result.message);
+
+                    return;
+                }
+
+                openCheckout(result.data);
+
+            } catch (e) {
+
+                console.error(e);
+
+            }
+        }
+
+        function openCheckout(payment) {
+
+            console.log("Opening Razorpay...");
+
+            const options = {
+
+                key: payment.keyId,
+
+                amount: payment.amount * 100,
+
+                currency: payment.currency,
+
+                order_id: payment.gatewayOrderId,
+
+                name: "Flight Booking",
+
+                description: "Flight Ticket",
+
+                handler: function (response) {
+
+    console.log("========== PAYMENT SUCCESS ==========");
+
+    console.log(response);
+
+    alert(JSON.stringify(response, null, 2));
+
+    debugger;
+
+    verifyPayment(response);
+
+}
+
+            };
+
+            const razorpay = new Razorpay(options);
+
+            razorpay.open();
+
+        }
+
+        async function verifyPayment(response) {
+
+            try {
+
+                const verify = await fetch(
+                    "http://localhost:8084/api/private/payments/verify",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type": "application/json",
+
+                            "Authorization": "Bearer " + JWT
+
+                        },
+
+                        body: JSON.stringify({
+
+                            gatewayOrderId: response.razorpay_order_id,
+
+                            gatewayPaymentId: response.razorpay_payment_id,
+
+                            signature: response.razorpay_signature,
+
+                            gatewayResponse: JSON.stringify(response),
+
+                            transactionId: "",
+
+                            webhookEventId: ""
+
+                        })
+
+                    });
+
+                const result = await verify.json();
+
+                console.log("Verify Response:", result);
+
+                alert("Payment Verified");
+
+            } catch (e) {
+
+                console.error(e);
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
