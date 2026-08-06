@@ -1,33 +1,98 @@
+# Spring Boot
+
 HELP.md
+
 target/
-.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+.mvn/wrapper/maven-wrapper.jar
+
+# Environment Files
+
+.env
+.env.*
+!.env.example
+
+# Logs
+
+*.log
+logs/
+*.out
+
+# OS Files
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# STS
+
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+
+.idea/
 *.iws
 *.iml
 *.ipr
+out/
 
-### NetBeans ###
+# Eclipse
+
+.metadata
+.recommenders
+
+# NetBeans
+
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
+
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# VS Code
+
 .vscode/
+
+# Maven
+
+dependency-reduced-pom.xml
+
+# Java
+
+*.class
+
+# Docker
+
+docker-compose.override.yml
+
+# Temporary Files
+
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# React Frontend
+
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Coverage
+
+coverage/
