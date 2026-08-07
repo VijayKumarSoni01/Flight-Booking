@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:inline="html">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Payment Failed</title>
+
+
+    <style>
+
+        body {
+
+            margin:0;
+            padding:0;
+            background:#f3f6fa;
+            font-family:Arial, Helvetica, sans-serif;
+
+        }
+
+
+        .container {
+
+            width:100%;
+            padding:20px 10px;
+
+        }
+
+
+        .card {
+
+            max-width:600px;
+            margin:auto;
+            background:white;
+            border-radius:14px;
+            overflow:hidden;
+
+        }
+
+
+
+        .header {
+
+            background:#c62828;
+            padding:25px;
+            text-align:center;
+            color:white;
+
+        }
+
+
+
+        .logo {
+
+            width:120px;
+
+        }
+
+
+
+        .header h1 {
+
+            margin:10px 0 0;
+            font-size:25px;
+
+        }
+
+
+
+
+        .content {
+
+            padding:25px;
+
+        }
+
+
+
+
+        p {
+
+            color:#444;
+            font-size:15px;
+            line-height:1.6;
+
+        }
+
+
+
+
+        .title {
+
+            color:#c62828;
+            font-size:20px;
+            margin-top:25px;
+
+        }
+
+
+
+
+        .details {
+
+            width:100%;
+            border-collapse:collapse;
+
+        }
+
+
+
+        .details td {
+
+            padding:10px 8px;
+            border-bottom:1px solid #eee;
+            font-size:14px;
+
+        }
+
+
+
+        .details td:first-child {
+
+            width:45%;
+            color:#666;
+
+        }
+
+
+
+
+        .failed {
+
+            color:#c62828;
+            font-weight:bold;
+
+        }
+
+
+
+
+        .amount-box {
+
+            margin-top:20px;
+            padding:15px;
+            background:#ffebee;
+            border-radius:8px;
+            text-align:center;
+
+        }
+
+
+
+        .amount {
+
+            color:#c62828;
+            font-size:22px;
+            font-weight:bold;
+
+        }
+
+
+
+
+
+        .button {
+
+            display:inline-block;
+            margin-top:20px;
+            padding:12px 25px;
+            background:#c62828;
+            color:white!important;
+            text-decoration:none;
+            border-radius:6px;
+            font-size:14px;
+
+        }
+
+
+
+
+        .footer {
+
+            background:#f8f8f8;
+            padding:20px;
+            text-align:center;
+            font-size:13px;
+            color:#777;
+
+        }
+
+
+
+
+
+        @media(max-width:600px){
+
+
+            .content {
+
+                padding:18px;
+
+            }
+
+
+            .details td {
+
+                font-size:13px;
+
+            }
+
+
+            .header h1 {
+
+                font-size:22px;
+
+            }
+
+        }
+
+
+    </style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<table class="card"
+       width="100%"
+       cellspacing="0"
+       cellpadding="0">
+
+
+
+<!-- HEADER -->
+
+<tr>
+
+<td class="header">
+
+
+<img th:src="${logoPath}"
+     class="logo"
+     alt="Logo">
+
+
+<h1>
+✕ Payment Failed
+</h1>
+
+
+</td>
+
+</tr>
+
+
+
+
+
+<!-- CONTENT -->
+
+<tr>
+
+<td class="content">
+
+
+<p>
+
+Dear
+
+<strong th:text="${recipientName}">
+Customer
+</strong>
+
+,
+
+</p>
+
+
+
+<p>
+
+Unfortunately, your payment could not be completed.
+
+Your booking is still pending.
+
+</p>
+
+
+
+
+
+
+
+<div class="amount-box">
+
+
+<p>
+Payment Amount
+</p>
+
+
+<div class="amount">
+
+
+<span th:text="${currency}">
+INR
+</span>
+
+
+<span th:text="${amount}">
+5500
+</span>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<h2 class="title">
+
+Payment Details
+
+</h2>
+
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Booking Reference
+</td>
+
+
+<td th:text="${bookingReference}">
+BK12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Transaction ID
+</td>
+
+
+<td th:text="${transactionId}">
+TXN12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Method
+</td>
+
+
+<td th:text="${paymentMethod}">
+UPI
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Gateway
+</td>
+
+
+<td th:text="${paymentGateway}">
+RAZORPAY
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Status
+</td>
+
+
+<td class="failed"
+    th:text="${paymentStatus}">
+FAILED
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Failure Reason
+</td>
+
+
+<td th:text="${failureReason}">
+Insufficient balance
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<div style="text-align:center;">
+
+
+
+<a class="button"
+   th:href="${retryPaymentUrl}">
+
+Retry Payment
+
+</a>
+
+
+
+</div>
+
+
+
+
+
+
+
+<p>
+
+If money was deducted from your account, it will be automatically refunded according to your bank/payment provider policy.
+
+</p>
+
+
+
+
+
+<p>
+
+Need help?
+
+Contact us at:
+
+<strong th:text="${supportEmail}">
+support@skywing.com
+</strong>
+
+</p>
+
+
+
+
+
+<p>
+
+Thank you for choosing
+
+<strong th:text="${applicationName}">
+SkyWing
+</strong>
+
+.
+
+</p>
+
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+
+<!-- FOOTER -->
+
+
+<tr>
+
+<td class="footer">
+
+
+©
+
+<span th:text="${applicationName}">
+SkyWing
+</span>
+
+
+<br>
+
+
+Safe and secure travel booking
+
+
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+</div>
+
+
+</body>
+
+
+</html>

@@ -1,0 +1,155 @@
+server:
+  address: 0.0.0.0
+
+
+spring:
+
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/notification_management}
+
+
+
+  mail:
+
+    host: ${BREVO_SMTP_HOST}
+
+    port: ${BREVO_SMTP_PORT}
+
+    username: ${BREVO_SMTP_USER}
+
+    password: ${BREVO_SMTP_KEY}
+
+
+    properties:
+
+      mail:
+
+        smtp:
+
+          auth: true
+
+          starttls:
+
+            enable: true
+
+
+
+
+
+  cloud:
+
+    openfeign:
+
+      okhttp:
+        enabled: true
+
+
+      client:
+
+        config:
+
+          default:
+
+            connectTimeout: 5000
+
+            readTimeout: 10000
+
+            loggerLevel: basic
+
+
+
+
+
+
+app:
+
+
+  jwt:
+
+    issuer: ${JWT_ISSUER:skywing}
+
+    audience: ${JWT_AUDIENCE:skywing-users}
+
+    secret-key: ${JWT_SECRET}
+
+    header: Authorization
+
+    prefix: "Bearer "
+
+
+    expiration-time: ${JWT_EXPIRATION_TIME:900000}
+
+    refresh-expiration-time: ${JWT_REFRESH_EXPIRATION_TIME:604800000}
+
+
+
+
+
+
+  mail:
+
+
+    # Verified sender email from Brevo
+    from-email: ${BREVO_FROM_EMAIL}
+
+
+    from-name: ${BREVO_FROM_NAME:SkyWing Flight Booking}
+
+
+    application-name: SkyWing Flight Booking
+
+
+    subject-prefix: "[SkyWing]"
+
+
+    support-email: support@skywing.com
+
+
+    # Reply address should also be verified sender
+    reply-to: ${BREVO_FROM_EMAIL}
+
+
+    frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+
+    backend-url: ${BACKEND_URL:http://localhost:8085}
+
+
+    logo-path: classpath:/static/images/logo.png
+
+
+    banner-path: classpath:/static/images/banner.png
+
+
+
+    retry:
+
+
+      max-count: 3
+
+
+      interval-minutes: 10
+
+
+
+
+
+
+services:
+
+
+  user-management:
+
+    url: ${USER_MANAGEMENT_URL:http://localhost:8081}
+
+
+
+  booking:
+
+    url: ${BOOKING_URL:http://localhost:8083}
+
+
+
+  payment:
+
+    url: ${PAYMENT_URL:http://localhost:8084}

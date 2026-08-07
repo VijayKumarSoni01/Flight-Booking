@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:inline="html">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Payment Successful</title>
+
+
+    <style>
+
+        body {
+
+            margin:0;
+            padding:0;
+            background:#f3f6fa;
+            font-family:Arial, Helvetica, sans-serif;
+
+        }
+
+
+        .container {
+
+            width:100%;
+            padding:20px 10px;
+
+        }
+
+
+        .card {
+
+            max-width:600px;
+            margin:auto;
+            background:white;
+            border-radius:14px;
+            overflow:hidden;
+
+        }
+
+
+
+        .header {
+
+            background:#2e7d32;
+            padding:25px;
+            text-align:center;
+            color:white;
+
+        }
+
+
+        .logo {
+
+            width:120px;
+
+        }
+
+
+        .header h1 {
+
+            margin-top:10px;
+            font-size:25px;
+
+        }
+
+
+
+        .content {
+
+            padding:25px;
+
+        }
+
+
+
+        p {
+
+            color:#444;
+            font-size:15px;
+            line-height:1.6;
+
+        }
+
+
+
+        .title {
+
+            color:#2e7d32;
+            font-size:20px;
+            margin-top:25px;
+
+        }
+
+
+
+
+        .details {
+
+            width:100%;
+            border-collapse:collapse;
+
+        }
+
+
+
+        .details td {
+
+            padding:10px 8px;
+            border-bottom:1px solid #eee;
+            font-size:14px;
+
+        }
+
+
+
+        .details td:first-child {
+
+            color:#666;
+            width:45%;
+
+        }
+
+
+
+        .success {
+
+            color:#2e7d32;
+            font-weight:bold;
+
+        }
+
+
+
+        .amount-box {
+
+            margin-top:20px;
+            padding:15px;
+            background:#e8f5e9;
+            border-radius:8px;
+            text-align:center;
+
+        }
+
+
+
+        .amount {
+
+            font-size:22px;
+            color:#2e7d32;
+            font-weight:bold;
+
+        }
+
+
+
+        .footer {
+
+            background:#f8f8f8;
+            padding:20px;
+            text-align:center;
+            color:#777;
+            font-size:13px;
+
+        }
+
+
+
+        @media(max-width:600px){
+
+
+            .content {
+
+                padding:18px;
+
+            }
+
+
+            .details td {
+
+                font-size:13px;
+
+            }
+
+
+            .header h1 {
+
+                font-size:22px;
+
+            }
+
+        }
+
+
+    </style>
+
+
+</head>
+
+
+
+<body>
+
+
+<div class="container">
+
+
+<table class="card"
+       width="100%"
+       cellspacing="0"
+       cellpadding="0">
+
+
+
+<!-- HEADER -->
+
+<tr>
+
+<td class="header">
+
+
+<img th:src="${logoPath}"
+     class="logo"
+     alt="Logo">
+
+
+<h1>
+✓ Payment Successful
+</h1>
+
+
+</td>
+
+</tr>
+
+
+
+
+
+<!-- CONTENT -->
+
+<tr>
+
+<td class="content">
+
+
+<p>
+
+Dear
+
+<strong th:text="${recipientName}">
+Customer
+</strong>
+
+,
+
+</p>
+
+
+
+<p>
+
+Your payment has been completed successfully.
+
+Your booking is confirmed.
+
+</p>
+
+
+
+
+
+<div class="amount-box">
+
+
+<p>
+
+Payment Amount
+
+</p>
+
+
+<div class="amount">
+
+
+<span th:text="${currency}">
+INR
+</span>
+
+
+<span th:text="${paymentAmount}">
+5500
+</span>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<h2 class="title">
+
+Payment Details
+
+</h2>
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Payment ID
+</td>
+
+
+<td th:text="${paymentId}">
+PAY12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Transaction ID
+</td>
+
+
+<td th:text="${transactionId}">
+TXN12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Method
+</td>
+
+
+<td th:text="${paymentMethod}">
+UPI
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Gateway
+</td>
+
+
+<td th:text="${paymentGateway}">
+RAZORPAY
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Payment Status
+</td>
+
+
+<td class="success"
+    th:text="${paymentStatus}">
+SUCCESS
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Paid At
+</td>
+
+
+<td th:text="${#temporals.format(paidAt,'dd MMM yyyy hh:mm a')}">
+06 Aug 2026 06:00 PM
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<h2 class="title">
+
+Booking Details
+
+</h2>
+
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Booking Reference
+</td>
+
+
+<td th:text="${bookingReference}">
+BK12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+PNR
+</td>
+
+
+<td th:text="${pnr}">
+ABC123
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Airline
+</td>
+
+
+<td th:text="${airlineName}">
+Air India
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Flight Number
+</td>
+
+
+<td th:text="${flightNumber}">
+AI101
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Route
+</td>
+
+
+<td>
+
+<span th:text="${sourceAirport}">
+DEL
+</span>
+
+→
+
+<span th:text="${destinationAirport}">
+BOM
+</span>
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Seat Number
+</td>
+
+
+<td th:text="${seatNumbers}">
+12A
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Cabin Class
+</td>
+
+
+<td th:text="${cabinClass}">
+Economy
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<p>
+
+Thank you for choosing
+
+<strong th:text="${applicationName}">
+SkyWing
+</strong>
+
+.
+
+</p>
+
+
+
+<p>
+
+Have a safe journey ✈
+
+</p>
+
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+
+<!-- FOOTER -->
+
+<tr>
+
+<td class="footer">
+
+
+Need help?
+
+
+<br>
+
+
+<a th:href="'mailto:' + ${supportEmail}"
+   th:text="${supportEmail}">
+support@skywing.com
+</a>
+
+
+
+<br><br>
+
+
+
+©
+
+<span th:text="${applicationName}">
+SkyWing
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+</table>
+
+
+</div>
+
+
+</body>
+
+</html>

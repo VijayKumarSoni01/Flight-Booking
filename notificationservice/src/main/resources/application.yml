@@ -1,0 +1,95 @@
+server:
+  port: 8085
+
+
+spring:
+
+  application:
+    name: notification-management
+
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+
+
+  cloud:
+
+    openfeign:
+
+      okhttp:
+        enabled: true
+
+
+      client:
+
+        config:
+
+          default:
+
+            connectTimeout: 5000
+
+            readTimeout: 10000
+
+            loggerLevel: basic
+
+
+
+
+
+logging:
+
+  level:
+
+    "[com.project.notificationmanagement]": INFO
+
+    "[com.project.notificationmanagement.client]": DEBUG
+
+
+  file:
+
+    name: logs/notification-management.log
+
+
+
+
+
+app:
+
+  jwt:
+
+    issuer: ${JWT_ISSUER:skywing}
+
+    audience: ${JWT_AUDIENCE:skywing-users}
+
+    secret-key: ${JWT_SECRET}
+
+    header: Authorization
+
+    prefix: "Bearer "
+
+
+    expiration-time: ${JWT_EXPIRATION_TIME:900000}
+
+    refresh-expiration-time: ${JWT_REFRESH_EXPIRATION_TIME:604800000}
+
+
+
+
+
+services:
+
+
+  user-management:
+
+    url: ${USER_MANAGEMENT_URL:http://localhost:8081}
+
+
+  booking:
+
+    url: ${BOOKING_URL:http://localhost:8083}
+
+
+  payment:
+
+    url: ${PAYMENT_URL:http://localhost:8084}

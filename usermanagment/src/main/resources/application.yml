@@ -29,6 +29,8 @@ spring:
 
 app:
   jwt:
+    issuer: ${JWT_ISSUER:skywing}
+    audience: ${JWT_AUDIENCE:skywing-users}
     secret-key: ${JWT_SECRET}
     expiration-time: ${JWT_EXPIRATION_TIME:1800000}
     refresh-expiration-time: ${JWT_REFRESH_EXPIRATION_TIME:604800000}

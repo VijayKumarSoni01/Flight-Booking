@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:inline="html">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Booking Confirmation</title>
+
+
+    <style>
+
+        body {
+            margin:0;
+            padding:0;
+            background:#f3f6fa;
+            font-family:Arial, Helvetica, sans-serif;
+        }
+
+
+        .container {
+
+            width:100%;
+            padding:20px 10px;
+
+        }
+
+
+        .email-card {
+
+            max-width:600px;
+            margin:auto;
+            background:white;
+            border-radius:14px;
+            overflow:hidden;
+
+        }
+
+
+        .header {
+
+            background:#1565c0;
+            padding:25px;
+            text-align:center;
+            color:white;
+
+        }
+
+
+        .header h1 {
+
+            margin:10px 0 0;
+            font-size:26px;
+
+        }
+
+
+        .logo {
+
+            width:120px;
+            max-width:100%;
+
+        }
+
+
+        .content {
+
+            padding:25px;
+
+        }
+
+
+        .content p {
+
+            font-size:15px;
+            color:#444;
+            line-height:1.6;
+
+        }
+
+
+
+        .title {
+
+            color:#1565c0;
+            font-size:20px;
+            margin-top:25px;
+
+        }
+
+
+
+        .details {
+
+            width:100%;
+            border-collapse:collapse;
+            margin-top:15px;
+
+        }
+
+
+        .details td {
+
+            padding:10px 8px;
+            border-bottom:1px solid #eeeeee;
+            font-size:14px;
+
+        }
+
+
+        .details td:first-child {
+
+            color:#666;
+            width:45%;
+
+        }
+
+
+        .highlight {
+
+            color:#1565c0;
+            font-weight:bold;
+
+        }
+
+
+        .button {
+
+            display:inline-block;
+            margin-top:20px;
+            background:#1565c0;
+            color:white!important;
+            padding:12px 25px;
+            border-radius:6px;
+            text-decoration:none;
+            font-size:14px;
+
+        }
+
+
+
+        .footer {
+
+            background:#f8f8f8;
+            padding:20px;
+            text-align:center;
+            color:#777;
+            font-size:13px;
+
+        }
+
+
+
+        @media screen and (max-width:600px){
+
+
+            .container {
+
+                padding:10px;
+
+            }
+
+
+            .content {
+
+                padding:18px;
+
+            }
+
+
+            .header h1 {
+
+                font-size:22px;
+
+            }
+
+
+            .details td {
+
+                font-size:13px;
+
+                padding:8px 5px;
+
+            }
+
+
+            .title {
+
+                font-size:18px;
+
+            }
+
+
+        }
+
+
+    </style>
+
+
+</head>
+
+
+
+<body>
+
+
+<div class="container">
+
+
+<table class="email-card"
+       cellpadding="0"
+       cellspacing="0"
+       width="100%">
+
+
+
+<!-- HEADER -->
+
+<tr>
+
+<td class="header">
+
+
+<img th:src="${logoPath}"
+     class="logo"
+     alt="SkyWing Logo">
+
+
+
+<h1>
+    ✈ Booking Confirmed
+</h1>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<!-- BODY -->
+
+<tr>
+
+<td class="content">
+
+
+<p>
+
+Dear
+
+<strong th:text="${recipientName}">
+    Customer
+</strong>
+
+,
+
+</p>
+
+
+
+<p>
+
+Your flight booking has been confirmed successfully.
+
+Your journey details are mentioned below.
+
+</p>
+
+
+
+
+
+<h2 class="title">
+
+Booking Details
+
+</h2>
+
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Booking Reference
+</td>
+
+
+<td class="highlight"
+    th:text="${bookingReference}">
+BK12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+PNR
+</td>
+
+
+<td class="highlight"
+    th:text="${pnr}">
+ABC123
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Airline
+</td>
+
+
+<td th:text="${airlineName}">
+Air India
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Flight Number
+</td>
+
+
+<td th:text="${flightNumber}">
+AI101
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Route
+</td>
+
+
+<td>
+
+<span th:text="${sourceAirport}">
+DEL
+</span>
+
+
+&nbsp;→&nbsp;
+
+
+<span th:text="${destinationAirport}">
+BOM
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Departure
+</td>
+
+
+<td th:text="${#temporals.format(departureTime,'dd MMM yyyy hh:mm a')}">
+10 Aug 2026 10:00 AM
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Arrival
+</td>
+
+
+<td th:text="${#temporals.format(arrivalTime,'dd MMM yyyy hh:mm a')}">
+10 Aug 2026 12:00 PM
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Seat Number
+</td>
+
+
+<td th:text="${seatNumbers}">
+12A
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Passenger Count
+</td>
+
+
+<td th:text="${passengerCount}">
+2
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Cabin Class
+</td>
+
+
+<td th:text="${cabinClass}">
+Economy
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Total Fare
+</td>
+
+
+<td class="highlight">
+
+
+<span th:text="${currency}">
+INR
+</span>
+
+
+<span th:text="${totalFare}">
+5500
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+<div style="text-align:center;">
+
+
+<a class="button"
+   th:href="${bookingUrl}">
+
+View Booking
+
+</a>
+
+
+</div>
+
+
+
+
+
+
+<p>
+
+
+Thank you for choosing
+
+<strong th:text="${applicationName}">
+SkyWing
+</strong>
+
+
+</p>
+
+
+<p>
+
+Have a safe and pleasant journey ✈
+
+</p>
+
+
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<!-- FOOTER -->
+
+
+<tr>
+
+<td class="footer">
+
+
+Need help?
+
+
+<br>
+
+
+<a th:href="'mailto:' + ${supportEmail}"
+   th:text="${supportEmail}">
+
+support@skywing.com
+
+</a>
+
+
+
+<br><br>
+
+
+
+©
+
+<span th:text="${applicationName}">
+SkyWing
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+</table>
+
+
+</div>
+
+
+</body>
+
+</html>

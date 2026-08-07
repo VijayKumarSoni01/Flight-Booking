@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:inline="html">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Refund Processed</title>
+
+
+    <style>
+
+        body {
+
+            margin:0;
+            padding:0;
+            background:#f3f6fa;
+            font-family:Arial, Helvetica, sans-serif;
+
+        }
+
+
+        .container {
+
+            width:100%;
+            padding:20px 10px;
+
+        }
+
+
+        .card {
+
+            max-width:600px;
+            margin:auto;
+            background:white;
+            border-radius:14px;
+            overflow:hidden;
+
+        }
+
+
+        .header {
+
+            background:#1565c0;
+            padding:25px;
+            text-align:center;
+            color:white;
+
+        }
+
+
+        .logo {
+
+            width:120px;
+
+        }
+
+
+        .header h1 {
+
+            margin:10px 0 0;
+            font-size:25px;
+
+        }
+
+
+        .content {
+
+            padding:25px;
+
+        }
+
+
+        p {
+
+            color:#444;
+            font-size:15px;
+            line-height:1.6;
+
+        }
+
+
+
+        .title {
+
+            color:#1565c0;
+            font-size:20px;
+            margin-top:25px;
+
+        }
+
+
+
+        .details {
+
+            width:100%;
+            border-collapse:collapse;
+
+        }
+
+
+
+        .details td {
+
+            padding:10px 8px;
+            border-bottom:1px solid #eeeeee;
+            font-size:14px;
+
+        }
+
+
+
+        .details td:first-child {
+
+            width:45%;
+            color:#666;
+
+        }
+
+
+
+        .refund-box {
+
+            margin-top:20px;
+            padding:20px;
+            background:#e3f2fd;
+            border-radius:10px;
+            text-align:center;
+
+        }
+
+
+
+        .refund-amount {
+
+            font-size:24px;
+            font-weight:bold;
+            color:#1565c0;
+
+        }
+
+
+
+        .status {
+
+            font-weight:bold;
+            color:#2e7d32;
+
+        }
+
+
+
+        .footer {
+
+            background:#f8f8f8;
+            padding:20px;
+            text-align:center;
+            color:#777;
+            font-size:13px;
+
+        }
+
+
+
+
+        @media(max-width:600px){
+
+            .content {
+
+                padding:18px;
+
+            }
+
+
+            .header h1 {
+
+                font-size:22px;
+
+            }
+
+
+            .details td {
+
+                font-size:13px;
+
+            }
+
+        }
+
+
+    </style>
+
+
+</head>
+
+
+
+<body>
+
+
+<div class="container">
+
+
+<table class="card"
+       width="100%"
+       cellspacing="0"
+       cellpadding="0">
+
+
+<!-- HEADER -->
+
+<tr>
+
+<td class="header">
+
+
+<img th:src="${logoPath}"
+     class="logo"
+     alt="Logo">
+
+
+<h1>
+✓ Refund Processed
+</h1>
+
+
+</td>
+
+</tr>
+
+
+
+
+
+<!-- CONTENT -->
+
+<tr>
+
+<td class="content">
+
+
+<p>
+
+Dear
+
+<strong th:text="${recipientName}">
+Customer
+</strong>
+
+,
+
+</p>
+
+
+
+<p>
+
+Your refund has been processed successfully.
+
+The refund details are mentioned below.
+
+</p>
+
+
+
+
+
+
+<div class="refund-box">
+
+
+<p>
+Refund Amount
+</p>
+
+
+<div class="refund-amount">
+
+
+<span th:text="${currency}">
+INR
+</span>
+
+
+<span th:text="${refundAmount}">
+5000
+</span>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<h2 class="title">
+
+Refund Details
+
+</h2>
+
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Refund Reference
+</td>
+
+
+<td th:text="${refundReference}">
+RF123456
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Refund Status
+</td>
+
+
+<td class="status"
+    th:text="${refundStatus}">
+PROCESSED
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Refund Processed At
+</td>
+
+
+<td th:text="${#temporals.format(refundProcessedAt,'dd MMM yyyy hh:mm a')}">
+06 Aug 2026 06:30 PM
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Refund Reason
+</td>
+
+
+<td th:text="${refundReason}">
+Booking cancellation
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<h2 class="title">
+
+Booking Details
+
+</h2>
+
+
+
+
+
+<table class="details">
+
+
+
+<tr>
+
+<td>
+Booking Reference
+</td>
+
+
+<td th:text="${bookingReference}">
+BK12345
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+PNR
+</td>
+
+
+<td th:text="${pnr}">
+ABC123
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Flight Number
+</td>
+
+
+<td th:text="${flightNumber}">
+AI101
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+Route
+</td>
+
+
+<td>
+
+
+<span th:text="${sourceAirport}">
+DEL
+</span>
+
+
+→
+
+
+<span th:text="${destinationAirport}">
+BOM
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<p>
+
+The refund amount will reflect in your account according to your bank/payment provider processing time.
+
+</p>
+
+
+
+
+
+<p>
+
+Thank you for choosing
+
+<strong th:text="${applicationName}">
+SkyWing
+</strong>
+
+.
+
+</p>
+
+
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<!-- FOOTER -->
+
+<tr>
+
+<td class="footer">
+
+
+Need help?
+
+
+<br>
+
+
+<a th:href="'mailto:' + ${supportEmail}"
+   th:text="${supportEmail}">
+support@skywing.com
+</a>
+
+
+
+<br><br>
+
+
+©
+
+<span th:text="${applicationName}">
+SkyWing
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+
+</table>
+
+
+</div>
+
+
+</body>
+
+
+</html>
