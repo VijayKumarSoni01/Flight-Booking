@@ -1,0 +1,77 @@
+.payment-page{
+
+    min-height:80vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#f5f7fb;
+
+    padding:30px;
+
+}
+
+
+.payment-card{
+
+    background:white;
+
+    width:450px;
+
+    padding:35px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,0.12);
+
+    text-align:center;
+
+}
+
+
+
+.flight-summary{
+
+    margin:25px 0;
+
+    padding:20px;
+
+    background:#f8fafc;
+
+    border-radius:15px;
+
+}
+
+
+
+.payment-btn{
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#2563eb;
+
+    color:white;
+
+    font-size:18px;
+
+    cursor:pointer;
+
+}
+
+
+
+.payment-btn:hover{
+
+    background:#1d4ed8;
+
+}

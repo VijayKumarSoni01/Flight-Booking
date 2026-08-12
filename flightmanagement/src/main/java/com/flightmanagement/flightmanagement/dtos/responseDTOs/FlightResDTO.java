@@ -2,6 +2,7 @@ package com.flightmanagement.flightmanagement.dtos.responseDTOs;
 
 import java.time.LocalDateTime;
 
+import com.flightmanagement.flightmanagement.enums.CurrencyCode;
 import com.flightmanagement.flightmanagement.enums.FlightStatus;
 import com.flightmanagement.flightmanagement.enums.FlightType;
 
@@ -11,24 +12,33 @@ import lombok.Data;
 @Data
 @Builder
 public class FlightResDTO {
+
     private Long id;
 
     private String flightNumber;
 
     private Long airlineId;
+
     private String airlineName;
+
     private String airlineCode;
 
     private Long aircraftId;
+
     private String aircraftRegistration;
+
     private String aircraftModel;
 
     private Long originAirportId;
+
     private String originAirportName;
+
     private String originAirportCode;
 
     private Long destinationAirportId;
+
     private String destinationAirportName;
+
     private String destinationAirportCode;
 
     private FlightType flightType;
@@ -45,7 +55,10 @@ public class FlightResDTO {
 
     private String arrivalTerminal;
 
+    private CurrencyCode currency;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
 }

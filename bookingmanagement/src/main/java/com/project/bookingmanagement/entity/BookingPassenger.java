@@ -111,9 +111,9 @@ public class BookingPassenger {
     @Column(length = 10)
     private String seatNumber;
 
-    @NotNull(message = "Meal preference is required")
+    // @NotNull(message = "Meal preference is required")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = true, length = 30)
     private MealPreference mealPreference;
 
     @Size(max = 200)

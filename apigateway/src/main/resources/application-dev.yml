@@ -1,81 +1,312 @@
 server:
   port: 8080
 
+
 spring:
+
   config:
     activate:
       on-profile: dev
 
+
   cloud:
+
     gateway:
+
+      #################################################
+      # CORS CONFIGURATION
+      #################################################
+      globalcors:
+
+        add-to-simple-url-handler-mapping: true
+
+        cors-configurations:
+
+          '[/**]':
+
+            allowedOrigins:
+              - "http://localhost:5173"
+
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+
+            allowedHeaders:
+              - "*"
+
+            exposedHeaders:
+              - Authorization
+
+            allowCredentials: true
+
+            maxAge: 3600
+
+
+      #################################################
+      # ROUTES
+      #################################################
+
       server:
+
         webflux:
+
           routes:
 
-            #################################################
-            # USER MANAGEMENT
-            #################################################
-            - id: user-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/public/**,/api/private/users/**
 
             #################################################
             # FLIGHT MANAGEMENT
             #################################################
+
             - id: flight-service
+
               uri: http://localhost:8082
+
               predicates:
-                - Path=/api/flights/**,/api/aircrafts/**,/api/airlines/**,/api/airports/**,/api/baggage-policies/**,/api/flight-amenities/**,/api/flight-fares/**,/api/flight-status-info/**
+
+                - Path=/api/public/flights/**,/api/private/flights/**,/api/flights/**,/api/aircrafts/**,/api/airlines/**,/api/airports/**,/api/baggage-policies/**,/api/flight-amenities/**,/api/flight-fares/**,/api/flight-status-info/**
+
+
 
             #################################################
             # BOOKING MANAGEMENT
             #################################################
+
             - id: booking-service
+
               uri: http://localhost:8083
+
               predicates:
-                - Path=/api/private/bookings/**,/api/private/user/bookings/**,/api/private/admin/bookings/**
+
+                - Path=/api/private/user/bookings/**,/api/private/admin/bookings/**
+
+              filters:
+
+                - PreserveHostHeader
+
+
+
+            #################################################
+            # BOOKING INTERNAL
+            #################################################
+
+            - id: booking-internal-service
+
+              uri: http://localhost:8083
+
+              predicates:
+
+                - Path=/api/internal/bookings/**
+
+
+
+            #################################################
+            # PAYMENT MANAGEMENT
+            #################################################
+
+            - id: payment-service
+
+              uri: http://localhost:8084
+
+              predicates:
+
+                - Path=/api/private/payments/**,/api/admin/payments/**
+
+
+
+            #################################################
+            # PAYMENT WEBHOOK
+            #################################################
+
+            - id: payment-webhook-service
+
+              uri: http://localhost:8084
+
+              predicates:
+
+                - Path=/api/public/webhooks/**
+
+
+
+            #################################################
+            # NOTIFICATION MANAGEMENT
+            #################################################
+
+            - id: notification-service
+
+              uri: http://localhost:8085
+
+              predicates:
+
+                - Path=/api/private/notifications/**,/api/private/admin/notifications/**
+
+
+
+            #################################################
+            # NOTIFICATION INTERNAL
+            #################################################
+
+            - id: notification-internal-service
+
+              uri: http://localhost:8085
+
+              predicates:
+
+                - Path=/api/internal/notifications/**
+
+
+
+            #################################################
+            # USER MANAGEMENT
+            #################################################
+
+            - id: user-service
+
+              uri: http://localhost:8081
+
+              predicates:
+
+                - Path=/api/public/**
+
+
 
             #################################################
             # USER SWAGGER
             #################################################
+
             - id: user-docs
+
               uri: http://localhost:8081
+
               predicates:
+
                 - Path=/user/v3/api-docs
+
               filters:
+
                 - RewritePath=/user/(?<segment>.*), /${segment}
+
+
 
             #################################################
             # FLIGHT SWAGGER
             #################################################
+
             - id: flight-docs
+
               uri: http://localhost:8082
+
               predicates:
+
                 - Path=/flight/v3/api-docs
+
               filters:
+
                 - RewritePath=/flight/(?<segment>.*), /${segment}
+
+
 
             #################################################
             # BOOKING SWAGGER
             #################################################
+
             - id: booking-docs
+
               uri: http://localhost:8083
+
               predicates:
+
                 - Path=/booking/v3/api-docs
+
               filters:
+
                 - RewritePath=/booking/(?<segment>.*), /${segment}
 
+
+
+            #################################################
+            # PAYMENT SWAGGER
+            #################################################
+
+            - id: payment-docs
+
+              uri: http://localhost:8084
+
+              predicates:
+
+                - Path=/payment/v3/api-docs
+
+              filters:
+
+                - RewritePath=/payment/(?<segment>.*), /${segment}
+
+
+
+            #################################################
+            # NOTIFICATION SWAGGER
+            #################################################
+
+            - id: notification-docs
+
+              uri: http://localhost:8085
+
+              predicates:
+
+                - Path=/notification/v3/api-docs
+
+              filters:
+
+                - RewritePath=/notification/(?<segment>.*), /${segment}
+
+
+
+
+#################################################
+# LOGGING
+#################################################
+
 logging:
+
   level:
-    "[org.springframework.cloud.gateway]": INFO
+
+    "[org.springframework.cloud.gateway]": DEBUG
+
+    "[org.springframework.web.cors]": DEBUG
+
+
+
+#################################################
+# SWAGGER AGGREGATION
+#################################################
 
 springdoc:
+
   swagger-ui:
+
     urls:
+
       - name: User Management
+
         url: /user/v3/api-docs
+
+
       - name: Flight Management
+
         url: /flight/v3/api-docs
+
+
       - name: Booking Management
+
         url: /booking/v3/api-docs
+
+
+      - name: Payment Management
+
+        url: /payment/v3/api-docs
+
+
+      - name: Notification Management
+
+        url: /notification/v3/api-docs

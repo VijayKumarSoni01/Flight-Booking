@@ -1,0 +1,122 @@
+.flight-search-card {
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 25px;
+
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
+}
+
+.booking-tabs {
+  display: flex;
+
+  gap: 15px;
+
+  margin-bottom: 25px;
+}
+
+.booking-tabs button {
+  border: none;
+
+  background: white;
+
+  padding: 12px 35px;
+
+  font-size: 18px;
+
+  color: #334155;
+}
+
+.active-tab {
+  background: #2563eb !important;
+
+  color: white !important;
+
+  border-radius: 5px;
+}
+
+.trip-options {
+  display: flex;
+
+  gap: 30px;
+
+  margin-bottom: 25px;
+}
+
+.trip-options label {
+  font-size: 17px;
+
+  color: #334155;
+}
+
+.trip-options input {
+  margin-right: 8px;
+}
+
+.search-fields {
+  display: flex;
+
+  gap: 15px;
+
+  align-items: end;
+}
+
+.field {
+  flex: 1;
+}
+
+.field label {
+  display: block;
+
+  font-size: 15px;
+
+  margin-bottom: 8px;
+
+  color: #475569;
+}
+
+.field input,
+.field select {
+  width: 100%;
+
+  height: 55px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 8px;
+
+  padding: 0 15px;
+
+  font-size: 16px;
+}
+
+.search-flight-btn {
+  height: 55px;
+
+  padding: 0 30px;
+
+  background: #2563eb;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 8px;
+
+  font-size: 17px;
+
+  font-weight: 600;
+}
+
+.search-flight-btn:hover {
+  background: #1d4ed8;
+}
+
+
+
+@media (max-width: 992px) {
+  .search-fields {
+    flex-direction: column;
+  }
+}

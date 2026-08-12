@@ -27,31 +27,55 @@ public interface FlightMapper {
     @Mapping(source = "destinationAirport.name", target = "destinationAirportName")
     @Mapping(source = "destinationAirport.iataCode", target = "destinationAirportCode")
 
+    // ADD THIS
+    @Mapping(source = "currency", target = "currency")
+
     FlightResDTO toDto(Flight flight);
 
     @Mapping(target = "id", ignore = true)
+
     @Mapping(target = "airline", ignore = true)
+
     @Mapping(target = "aircraft", ignore = true)
+
     @Mapping(target = "originAirport", ignore = true)
+
     @Mapping(target = "destinationAirport", ignore = true)
+
     @Mapping(target = "status", ignore = true)
+
     @Mapping(target = "durationMinutes", ignore = true)
+
     @Mapping(target = "createdAt", ignore = true)
+
     @Mapping(target = "updatedAt", ignore = true)
+
     @Mapping(target = "version", ignore = true)
+
     Flight toEntity(FlightReqDTO request);
 
     @Mapping(target = "id", ignore = true)
+
     @Mapping(target = "airline", ignore = true)
+
     @Mapping(target = "aircraft", ignore = true)
+
     @Mapping(target = "originAirport", ignore = true)
+
     @Mapping(target = "destinationAirport", ignore = true)
+
     @Mapping(target = "status", ignore = true)
+
     @Mapping(target = "durationMinutes", ignore = true)
+
     @Mapping(target = "createdAt", ignore = true)
+
     @Mapping(target = "updatedAt", ignore = true)
+
     @Mapping(target = "version", ignore = true)
+
     void updateEntityFromDto(
             FlightReqDTO request,
             @MappingTarget Flight flight);
+
 }

@@ -1,11 +1,17 @@
 package com.project.payment.enums;
 
 public enum PaymentMethod {
-    CARD,
+    CREDIT_CARD,
 
-    UPI,
+    DEBIT_CARD,
 
     NET_BANKING,
 
-    WALLET
+    UPI,
+
+    WALLET,
+
+    PAY_LATER,
+
+    BANK_TRANSFER
 }

@@ -20,8 +20,20 @@ public class CustomUserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+
         return roles.stream()
-                .map(SimpleGrantedAuthority::new)
+                .map(role -> {
+
+                    if (role.startsWith("ROLE_")) {
+
+                        return new SimpleGrantedAuthority(role);
+
+                    }
+
+                    return new SimpleGrantedAuthority(
+                            "ROLE_" + role);
+
+                })
                 .toList();
     }
 

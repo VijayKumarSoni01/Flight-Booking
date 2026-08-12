@@ -2,10 +2,13 @@ package com.project.apigateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import org.springframework.http.HttpMethod;
+
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import com.project.apigateway.filter.JwtAuthenticationFilter;
@@ -14,50 +17,59 @@ import com.project.apigateway.filter.JwtAuthenticationFilter;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
+        public SecurityConfig(
+                        JwtAuthenticationFilter jwtAuthenticationFilter) {
 
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
 
-        return http
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .formLogin(formLogin -> formLogin.disable())
-                .authorizeExchange(exchange -> exchange
+        @Bean
+        public SecurityWebFilterChain securityWebFilterChain(
+                        ServerHttpSecurity http) {
 
-                        .pathMatchers("/api/public/**")
-                        .permitAll()
+                return http
 
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/flights/**",
-                                "/api/aircrafts/**",
-                                "/api/airlines/**",
-                                "/api/airports/**",
-                                "/api/baggage-policies/**",
-                                "/api/flight-amenities/**",
-                                "/api/flight-fares/**",
-                                "/api/flight-status-info/**")
-                        .permitAll()
+                                .csrf(csrf -> csrf.disable())
 
-                        .pathMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/user/v3/api-docs",
-                                "/flight/v3/api-docs")
-                        .permitAll()
+                                .cors(cors -> {
+                                })
 
-                        .anyExchange().authenticated())
+                                .authorizeExchange(exchange -> exchange
 
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        SecurityWebFiltersOrder.AUTHENTICATION)
+                                                // Browser preflight
+                                                .pathMatchers(
+                                                                HttpMethod.OPTIONS,
+                                                                "/**")
+                                                .permitAll()
 
-                .build();
-    }
+                                                // Public APIs
+                                                .pathMatchers(
+                                                                "/api/public/**")
+                                                .permitAll()
+
+                                                // Swagger
+                                                .pathMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/**/v3/api-docs")
+                                                .permitAll()
+
+                                                // Protected APIs
+                                                .anyExchange()
+                                                .authenticated()
+
+                                )
+
+                                // IMPORTANT
+                                // JWT verification happens here
+                                .addFilterAt(
+                                                jwtAuthenticationFilter,
+                                                SecurityWebFiltersOrder.AUTHENTICATION)
+
+                                .build();
+
+        }
+
 }

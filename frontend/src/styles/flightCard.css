@@ -1,0 +1,188 @@
+.flight-card{
+
+
+    background:white;
+
+    border-radius:20px;
+
+    padding:25px;
+
+    margin-bottom:20px;
+
+    box-shadow:
+
+    0 8px 25px rgba(0,0,0,.12);
+
+
+}
+
+
+
+
+
+.flight-header{
+
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+
+}
+
+
+
+.flight-header h4{
+
+
+    margin:0;
+
+    font-weight:700;
+
+
+}
+
+
+
+.flight-header span{
+
+
+    color:#777;
+
+
+}
+
+
+
+
+.price{
+
+
+    font-size:24px;
+
+    font-weight:700;
+
+    color:#2563eb;
+
+
+}
+
+
+
+
+
+.route-section{
+
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:50px;
+
+    margin:30px 0;
+
+
+}
+
+
+
+
+
+.airport{
+
+
+    text-align:center;
+
+
+}
+
+
+
+.airport h3{
+
+
+    font-weight:700;
+
+
+}
+
+
+
+.airport p{
+
+
+    color:#555;
+
+
+}
+
+
+
+
+.line{
+
+
+    font-size:30px;
+
+    color:#2563eb;
+
+
+}
+
+
+
+
+.flight-info{
+
+
+    display:flex;
+
+    justify-content:space-around;
+
+    background:#f8fafc;
+
+    padding:15px;
+
+    border-radius:12px;
+
+
+}
+
+
+
+.details-btn{
+
+
+    width:100%;
+
+    margin-top:20px;
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    padding:14px;
+
+    border-radius:12px;
+
+    font-weight:600;
+
+
+}
+
+
+
+.details-btn:hover{
+
+
+    background:#1d4ed8;
+
+
+}

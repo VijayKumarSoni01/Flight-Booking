@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.project.bookingmanagement.dto.booking.internal.BookingValidationResponse;
 import com.project.bookingmanagement.dto.booking.request.UpdateBookingPaymentStatusReqDTO;
+import com.project.bookingmanagement.dto.booking.response.BookingConfirmationResponse;
 import com.project.bookingmanagement.service.interfaces.BookingService;
 
 import lombok.RequiredArgsConstructor;
@@ -35,11 +36,11 @@ public class InternalBookingController {
     }
 
     @PostMapping("/{bookingId}/confirm")
-    public ResponseEntity<Void> confirmBooking(
+    public ResponseEntity<BookingConfirmationResponse> confirmBooking(
             @PathVariable Long bookingId) {
 
-        bookingService.confirmBooking(bookingId);
+        BookingConfirmationResponse response = bookingService.confirmBooking(bookingId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 }

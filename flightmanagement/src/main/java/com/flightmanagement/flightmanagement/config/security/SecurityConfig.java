@@ -44,6 +44,13 @@ public class SecurityConfig {
                                                                 "/api/private/flights/seats/confirm/**")
                                                 .permitAll()
 
+                                                // Search flights
+                                                // Get flight details
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/public/flights/**")
+                                                .permitAll()
+
                                                 .requestMatchers(HttpMethod.GET, "/api/flights/**").permitAll()
 
                                                 .requestMatchers(HttpMethod.POST, "/api/airlines/**").hasRole("ADMIN")

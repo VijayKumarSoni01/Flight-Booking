@@ -96,10 +96,19 @@ public class FlightServiceImple implements FlightService {
         public FlightResDTO getFlightById(Long id) {
 
                 Flight flight = flightRepository.findById(id)
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                                "Flight with ID " + id + " not found."));
+                                .orElseThrow(() -> new IllegalArgumentException("Flight not found"));
 
-                return flightMapper.toDto(flight);
+                System.out.println(
+                                "FLIGHT CURRENCY FROM DB : "
+                                                + flight.getCurrency());
+
+                FlightResDTO dto = flightMapper.toDto(flight);
+
+                System.out.println(
+                                "FLIGHT CURRENCY DTO : "
+                                                + dto.getCurrency());
+
+                return dto;
         }
 
         @Override

@@ -23,11 +23,10 @@ import com.project.bookingmanagement.dto.booking.response.BookingResponse;
 import com.project.bookingmanagement.dto.booking.response.BookingSummaryResponse;
 import com.project.bookingmanagement.dto.booking.response.RefundResponseDTO;
 import com.project.bookingmanagement.dto.common.ApiResponse;
-import com.project.bookingmanagement.dto.external.flight.FlightFareResponse;
+// import com.project.bookingmanagement.dto.external.flight.FlightFareResponse;
 import com.project.bookingmanagement.dto.external.flight.FlightResponse;
 import com.project.bookingmanagement.dto.external.flight.SeatAvailabilityResponse;
 import com.project.bookingmanagement.dto.external.flight.SeatReservationRequest;
-import com.project.bookingmanagement.dto.passenger.request.AddPassengerRequest;
 import com.project.bookingmanagement.entity.Booking;
 import com.project.bookingmanagement.entity.BookingPassenger;
 import com.project.bookingmanagement.enums.bookingEnum.BookingStatus;
@@ -77,29 +76,50 @@ public class BookingServiceImpl implements BookingService {
 
                 try {
 
-                        // Step 1 : Validate Flight
+                        /*
+                         * Step 1:
+                         * Validate Flight
+                         */
                         validateFlight(request.getFlightId());
 
-                        // Step 2 : Fetch Flight Details
+                        /*
+                         * Step 2:
+                         * Get Flight Details
+                         */
                         FlightResponse flight = getFlight(request.getFlightId());
 
-                        // Step 3 : Check Seat Availability
+                        /*
+                         * Step 3:
+                         * Check Seat Availability
+                         */
                         checkSeatAvailability(
                                         request.getFlightId(),
                                         request.getCabinClass(),
                                         request.getPassengers().size());
 
-                        // Step 4 : Fetch Fare
-                        FlightFareResponse fare = getFlightFare(
-                                        request.getFlightId(),
-                                        request.getCabinClass());
+                        /*
+                         * Step 4:
+                         * Use selected fare amount
+                         *
+                         * Do NOT calculate again from Flight Service.
+                         * User already selected Business/Economy fare.
+                         */
+                        BigDecimal totalFare = request.getTotalAmount();
 
-                        // Step 5 : Calculate Total Fare
-                        BigDecimal totalFare = calculateTotalFare(
-                                        request.getPassengers(),
-                                        fare);
+                        if (totalFare == null) {
 
-                        // Step 6 : Create Booking
+                                throw new IllegalArgumentException(
+                                                "Total amount is required");
+                        }
+
+                        log.info(
+                                        "Selected fare amount from request: {}",
+                                        totalFare);
+
+                        /*
+                         * Step 5:
+                         * Create Booking Entity
+                         */
                         Booking booking = bookingMapper.toEntity(request);
 
                         booking.setUserId(
@@ -124,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
                                         flight.getDepartureTime().toLocalDate());
 
                         booking.setCurrency(
-                                        fare.getCurrency());
+                                        flight.getCurrency());
 
                         booking.setTotalPassengers(
                                         request.getPassengers().size());
@@ -132,7 +152,10 @@ public class BookingServiceImpl implements BookingService {
                         booking.setTotalAmount(
                                         totalFare);
 
-                        // Step 7 : Add Passengers
+                        /*
+                         * Step 6:
+                         * Add Passengers
+                         */
                         List<BookingPassenger> passengers = request.getPassengers()
                                         .stream()
                                         .map(passengerMapper::toEntity)
@@ -141,13 +164,20 @@ public class BookingServiceImpl implements BookingService {
 
                         booking.setPassengers(passengers);
 
-                        // Step 8 : Save Booking
+                        /*
+                         * Step 7:
+                         * Save Booking
+                         */
                         Booking savedBooking = bookingRepository.save(booking);
 
-                        log.info("Booking created successfully. BookingReference={}",
+                        log.info(
+                                        "Booking created successfully. Reference={}",
                                         savedBooking.getBookingReference());
 
-                        // Step 9 : Reserve Seats
+                        /*
+                         * Step 8:
+                         * Reserve Seats
+                         */
                         SeatReservationRequest seatRequest = new SeatReservationRequest();
 
                         seatRequest.setCabinClass(
@@ -163,26 +193,36 @@ public class BookingServiceImpl implements BookingService {
                                         request.getFlightId(),
                                         seatRequest);
 
-                        log.info("Seats reserved successfully for BookingReference={}",
+                        log.info(
+                                        "Seats reserved successfully. Reference={}",
                                         savedBooking.getBookingReference());
 
-                        // Step 10 : Build Response
-                        BookingConfirmationResponse response = bookingMapper.toConfirmationResponse(savedBooking);
+                        /*
+                         * Step 9:
+                         * Response
+                         */
+                        BookingConfirmationResponse response = bookingMapper.toConfirmationResponse(
+                                        savedBooking);
 
                         response.setMessage(
                                         "Booking created successfully. Seats reserved. Awaiting payment.");
 
                         return response;
 
-                } catch (FlightNotAvailableException
-                                | SeatAlreadyBookedException ex) {
+                } catch (
+                                FlightNotAvailableException | SeatAlreadyBookedException ex) {
 
-                        log.error("Booking validation failed.", ex);
+                        log.error(
+                                        "Booking validation failed",
+                                        ex);
+
                         throw ex;
 
                 } catch (feign.FeignException ex) {
 
-                        log.error("Flight Service communication failed.", ex);
+                        log.error(
+                                        "Flight service communication failed",
+                                        ex);
 
                         throw new ExternalServiceException(
                                         "Flight Management Service",
@@ -191,7 +231,10 @@ public class BookingServiceImpl implements BookingService {
 
                 } catch (Exception ex) {
 
-                        log.error("Unexpected error while creating booking.", ex);
+                        log.error(
+                                        "Unexpected error while creating booking",
+                                        ex);
+
                         throw ex;
                 }
         }
@@ -262,57 +305,61 @@ public class BookingServiceImpl implements BookingService {
                 log.info("Seat availability verified successfully.");
         }
 
-        private FlightFareResponse getFlightFare(
-                        Long flightId,
-                        CabinClass cabinClass) {
+        // private FlightFareResponse getFlightFare(
+        // Long flightId,
+        // CabinClass cabinClass) {
 
-                log.info(
-                                "Fetching fare. FlightId={}, CabinClass={}",
-                                flightId,
-                                cabinClass);
+        // log.info(
+        // "Fetching fare. FlightId={}, CabinClass={}",
+        // flightId,
+        // cabinClass);
 
-                FlightFareResponse fare = flightServiceClient.getFlightFare(
-                                flightId,
-                                cabinClass.name());
+        // FlightFareResponse fare = flightServiceClient.getFlightFare(
+        // flightId,
+        // cabinClass.name());
 
-                if (fare == null) {
+        // if (fare == null) {
 
-                        log.warn("Fare not found for FlightId={}", flightId);
+        // log.warn("Fare not found for FlightId={}", flightId);
 
-                        throw new FlightNotAvailableException(
-                                        "Unable to fetch flight fare.");
-                }
+        // throw new FlightNotAvailableException(
+        // "Unable to fetch flight fare.");
+        // }
 
-                log.info("Fare fetched successfully.");
+        // log.info("Fare fetched successfully.");
 
-                return fare;
-        }
+        // return fare;
+        // }
 
-        private BigDecimal calculateTotalFare(
-                        List<AddPassengerRequest> passengers,
-                        FlightFareResponse fare) {
+        // private BigDecimal calculateTotalFare(
+        // List<AddPassengerRequest> passengers,
+        // FlightFareResponse fare) {
 
-                BigDecimal totalFare = BigDecimal.ZERO;
+        // BigDecimal totalFare = BigDecimal.ZERO;
 
-                for (AddPassengerRequest passenger : passengers) {
+        // for (AddPassengerRequest passenger : passengers) {
 
-                        switch (passenger.getPassengerType()) {
+        // BigDecimal passengerFare = switch (passenger.getPassengerType()) {
 
-                                case ADULT ->
-                                        totalFare = totalFare.add(fare.getAdultFare());
+        // case ADULT -> fare.getAdultFare();
 
-                                case CHILD ->
-                                        totalFare = totalFare.add(fare.getChildFare());
+        // case CHILD -> fare.getChildFare();
 
-                                case INFANT ->
-                                        totalFare = totalFare.add(fare.getInfantFare());
-                        }
-                }
+        // case INFANT -> fare.getInfantFare();
 
-                log.info("Total fare calculated: {}", totalFare);
+        // };
 
-                return totalFare;
-        }
+        // if (passengerFare == null) {
+        // throw new IllegalStateException(
+        // "Fare not configured for passenger type "
+        // + passenger.getPassengerType());
+        // }
+
+        // totalFare = totalFare.add(passengerFare);
+        // }
+
+        // return totalFare;
+        // }
 
         @Override
         @Transactional(readOnly = true)
@@ -433,8 +480,17 @@ public class BookingServiceImpl implements BookingService {
                                                 "Booking not found with ID: " + bookingId));
 
                 if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
-                        throw new IllegalStateException(
-                                        "Booking is already confirmed.");
+
+                        return BookingConfirmationResponse.builder()
+                                        .bookingId(booking.getId())
+                                        .bookingReference(booking.getBookingReference())
+                                        .pnr(booking.getPnr())
+                                        .bookingStatus(booking.getBookingStatus())
+                                        .paymentStatus(booking.getPaymentStatus())
+                                        .bookingDate(booking.getBookingDate())
+                                        .totalFare(booking.getTotalAmount())
+                                        .message("Booking already confirmed.")
+                                        .build();
                 }
 
                 if (booking.getBookingStatus() == BookingStatus.CANCELLED) {

@@ -1,0 +1,251 @@
+.flight-details-page {
+  background: #f8fafc;
+
+  min-height: 100vh;
+
+  padding: 30px;
+
+  font-family: Inter, sans-serif;
+}
+
+.details-card {
+  background: white;
+
+  border-radius: 24px;
+
+  padding: 30px;
+
+  margin-bottom: 25px;
+
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.airline-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.airline-brand {
+  display: flex;
+
+  gap: 18px;
+
+  align-items: center;
+}
+
+.big-logo {
+  width: 60px;
+
+  height: 60px;
+
+  border-radius: 50%;
+
+  background: #0f172a;
+
+  color: white;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 30px;
+}
+
+.airline-brand h2 {
+  margin: 0;
+
+  color: #0f172a;
+}
+
+.status-badge {
+  background: #dcfce7;
+
+  color: #15803d;
+
+  padding: 8px 18px;
+
+  border-radius: 30px;
+
+  font-weight: 700;
+}
+
+.journey {
+  margin-top: 40px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 60px;
+}
+
+.airport {
+  text-align: center;
+}
+
+.airport h1 {
+  font-size: 42px;
+
+  margin: 0;
+
+  color: #0f172a;
+}
+
+.airport p {
+  font-size: 22px;
+
+  font-weight: 700;
+}
+
+.journey-line {
+  width: 200px;
+
+  text-align: center;
+}
+
+.journey-line div {
+  border-top: 2px dashed #94a3b8;
+}
+
+.journey-line span {
+  font-size: 30px;
+}
+
+.flight-info {
+  margin-top: 30px;
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 30px;
+
+  color: #475569;
+}
+
+.fare-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 20px;
+}
+
+.fare-card {
+  padding: 25px;
+
+  border-radius: 20px;
+
+  background: #f8fafc;
+
+  border: 2px solid transparent;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.fare-card:hover {
+  transform: translateY(-5px);
+}
+
+.fare-card.selected {
+  border-color: #2563eb;
+
+  background: #eff6ff;
+}
+
+.fare-icon {
+  font-size: 35px;
+}
+
+.fare-card button {
+  width: 100%;
+
+  padding: 10px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #2563eb;
+
+  color: white;
+}
+
+.baggage-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+}
+
+.baggage-card {
+  background: #eff6ff;
+
+  padding: 20px;
+
+  border-radius: 18px;
+}
+
+.booking-footer {
+  position: sticky;
+
+  bottom: 20px;
+}
+
+.booking-footer button {
+  width: 100%;
+
+  padding: 18px;
+
+  border: none;
+
+  border-radius: 15px;
+
+  font-size: 20px;
+
+  font-weight: 700;
+
+  background: #2563eb;
+
+  color: white;
+}
+
+.booking-footer button:disabled {
+  background: #94a3b8;
+}
+
+@media (max-width: 800px) {
+  .flight-details-page {
+    padding: 15px;
+  }
+
+  .journey {
+    flex-direction: column;
+
+    gap: 20px;
+  }
+
+  .fare-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .baggage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flight-info {
+    flex-direction: column;
+
+    align-items: center;
+  }
+}
