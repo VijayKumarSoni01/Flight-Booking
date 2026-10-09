@@ -48,3 +48,12 @@ desktop.ini
 *.jks
 *.keystore
 *.p12
+# Generated debug artifact
+app-gateway-debug.jar
+
+# Debug artifacts
+app-gateway-debug.jar
+
+# Concurrency test dependencies and secrets
+concurrency-test/node_modules/
+concurrency-test/.env
