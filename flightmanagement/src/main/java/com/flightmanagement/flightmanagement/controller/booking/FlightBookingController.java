@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.flightmanagement.flightmanagement.dtos.requestDTOs.AutoSeatReservationReqDTO;
 import com.flightmanagement.flightmanagement.dtos.requestDTOs.SeatReservationReqDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.FlightFareResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.FlightResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatAvailabilityResDTO;
+import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatReservationResponse;
 import com.flightmanagement.flightmanagement.enums.CabinClass;
 import com.flightmanagement.flightmanagement.service.interFace.FlightFareService;
@@ -37,7 +37,7 @@ public class FlightBookingController {
                         @PathVariable Long flightId) {
 
                 return ResponseEntity.ok(
-                                flightService.getFlightById(flightId));
+                                flightService.getFlightInstanceById(flightId));
         }
 
         @Operation(summary = "Validate Flight", description = "Checks whether the flight exists and is available for booking.")
@@ -46,7 +46,7 @@ public class FlightBookingController {
                         @PathVariable Long flightId) {
 
                 return ResponseEntity.ok(
-                                flightService.validateFlight(flightId));
+                                flightService.validateFlightInstance(flightId));
         }
 
         @Operation(summary = "Get Flight Fare", description = "Returns the fare for the specified cabin class of the selected flight.")
@@ -92,6 +92,15 @@ public class FlightBookingController {
                 return ResponseEntity.ok().build();
         }
 
+        @GetMapping("/seats/{bookingReference}")
+        public ResponseEntity<List<SeatResDTO>> getSeatsByBookingReference(
+                        @PathVariable String bookingReference) {
+
+                return ResponseEntity.ok(
+                                seatService.getSeatsByBookingReference(
+                                                bookingReference));
+        }
+
         @Operation(summary = "Release Seats", description = "Releases all HELD seats associated with the booking reference and makes them AVAILABLE again when payment fails, booking is cancelled, or the hold expires.")
         @PostMapping("/seats/release/{bookingReference}")
         public ResponseEntity<Void> releaseSeats(
@@ -107,13 +116,11 @@ public class FlightBookingController {
         @PostMapping("/{flightId}/reserve-seats")
         public ResponseEntity<SeatReservationResponse> reserveSeats(
                         @PathVariable Long flightId,
-                        @Valid @RequestBody AutoSeatReservationReqDTO request) {
+                        @Valid @RequestBody SeatReservationReqDTO request) {
 
-                SeatReservationResponse response = seatService.reserveSeats(
-                                flightId,
-                                request.getCabinClass(),
-                                request.getSeatCount(),
-                                request.getBookingReference());
+                request.setFlightId(flightId);
+
+                SeatReservationResponse response = seatService.reserveSeats(request);
 
                 return ResponseEntity.ok(response);
         }

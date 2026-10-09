@@ -15,9 +15,6 @@ spring:
     show-sql: false
     open-in-view: false
 
-  mongodb:
-    uri: ${MONGODB_URI}
-
 booking:
   service:
     url: ${BOOKING_SERVICE_URL:http://booking-management:8083}

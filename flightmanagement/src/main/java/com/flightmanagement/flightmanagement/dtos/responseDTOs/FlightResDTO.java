@@ -61,4 +61,5 @@ public class FlightResDTO {
 
     private LocalDateTime updatedAt;
 
+    private FlightAmenityResDTO amenities;
 }

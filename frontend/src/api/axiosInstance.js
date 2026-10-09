@@ -8,21 +8,25 @@ const axiosInstance = axios.create({
   },
 });
 
-// Add JWT token automatically
+// Add JWT token automatically only for protected endpoints
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
 
     console.log("========== AXIOS REQUEST ==========");
-
     console.log("URL : ", config.baseURL + config.url);
 
-    console.log("TOKEN FROM STORAGE : ", token);
+    const isPublicRequest = config.url?.startsWith("/public/");
 
-    if (token) {
+    if (isPublicRequest) {
+      console.log("PUBLIC REQUEST - JWT NOT ADDED");
+    } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
 
-      console.log("AUTH HEADER ADDED : ", config.headers.Authorization);
+      console.log(
+        "AUTH HEADER ADDED : ",
+        config.headers.Authorization,
+      );
     } else {
       console.log("NO ACCESS TOKEN FOUND");
     }
@@ -54,11 +58,16 @@ axiosInstance.interceptors.response.use(
   (error) => {
     console.log("========== API ERROR ==========");
 
-    console.log("STATUS : ", error.response?.status);
+    console.log("STATUS :", error.response?.status);
 
-    console.log("DATA : ", error.response?.data);
+    console.log("DATA :", error.response?.data);
 
-    console.log("MESSAGE : ", error.message);
+    console.log(
+      "FULL DATA JSON :",
+      JSON.stringify(error.response?.data, null, 2),
+    );
+
+    console.log("MESSAGE :", error.message);
 
     console.log("===============================");
 

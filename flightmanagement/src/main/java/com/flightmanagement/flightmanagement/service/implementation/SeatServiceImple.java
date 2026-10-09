@@ -3,7 +3,10 @@ package com.flightmanagement.flightmanagement.service.implementation;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +17,8 @@ import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.SeatReservationResponse;
 import com.flightmanagement.flightmanagement.entity.Aircraft;
 import com.flightmanagement.flightmanagement.entity.Flight;
+import com.flightmanagement.flightmanagement.entity.FlightInstance;
+import com.flightmanagement.flightmanagement.entity.FlightInstanceSeat;
 import com.flightmanagement.flightmanagement.entity.Seat;
 import com.flightmanagement.flightmanagement.enums.CabinClass;
 import com.flightmanagement.flightmanagement.enums.SeatStatus;
@@ -21,6 +26,8 @@ import com.flightmanagement.flightmanagement.exception.FlightNotFoundException;
 import com.flightmanagement.flightmanagement.exception.ResourceNotFoundException;
 import com.flightmanagement.flightmanagement.exception.SeatAlreadyBookedException;
 import com.flightmanagement.flightmanagement.mapper.SeatMapper;
+import com.flightmanagement.flightmanagement.repository.FlightInstanceRepository;
+import com.flightmanagement.flightmanagement.repository.FlightInstanceSeatRepository;
 import com.flightmanagement.flightmanagement.repository.FlightRepository;
 import com.flightmanagement.flightmanagement.repository.SeatRepository;
 import com.flightmanagement.flightmanagement.service.interFace.SeatService;
@@ -35,16 +42,21 @@ import lombok.extern.slf4j.Slf4j;
 public class SeatServiceImple implements SeatService {
 
         private final SeatRepository seatRepository;
+
         private final FlightRepository flightRepository;
+
+        private final FlightInstanceRepository flightInstanceRepository;
+
+        private final FlightInstanceSeatRepository flightInstanceSeatRepository;
+
         private final SeatMapper seatMapper;
 
         @Override
         @Transactional
-        public SeatResDTO createSeat(
-                        SeatReqDTO request) {
+        public SeatResDTO createSeat(SeatReqDTO request) {
 
                 log.info(
-                                "Creating seat. FlightId={}, SeatNumber={}",
+                                "Creating physical seat. FlightId={}, SeatNumber={}",
                                 request.getFlightId(),
                                 request.getSeatNumber());
 
@@ -64,15 +76,11 @@ public class SeatServiceImple implements SeatService {
                                 .trim()
                                 .toUpperCase();
 
-                seatRepository.findByFlightIdAndSeatNumber(
-                                request.getFlightId(),
-                                seatNumber)
+                seatRepository
+                                .findByFlightIdAndSeatNumber(
+                                                request.getFlightId(),
+                                                seatNumber)
                                 .ifPresent(existingSeat -> {
-
-                                        log.warn(
-                                                        "Seat already exists. FlightId={}, SeatNumber={}",
-                                                        request.getFlightId(),
-                                                        seatNumber);
 
                                         throw new SeatAlreadyBookedException(
                                                         "Seat " + seatNumber
@@ -87,22 +95,15 @@ public class SeatServiceImple implements SeatService {
 
                 String numericPart = seatNumber.replaceAll("[^0-9]", "");
 
+                if (numericPart.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                        "Seat number must contain a numeric part.");
+                }
+
                 seat.setSeatIndex(
                                 Integer.parseInt(numericPart));
 
-                if (seat.getSeatStatus() == null) {
-
-                        seat.setSeatStatus(
-                                        SeatStatus.AVAILABLE);
-                }
-
                 Seat savedSeat = seatRepository.save(seat);
-
-                log.info(
-                                "Seat created successfully. SeatId={}, SeatNumber={}, FlightId={}",
-                                savedSeat.getId(),
-                                savedSeat.getSeatNumber(),
-                                flight.getId());
 
                 return seatMapper.toDto(savedSeat);
         }
@@ -111,18 +112,10 @@ public class SeatServiceImple implements SeatService {
         @Transactional(readOnly = true)
         public SeatResDTO getSeatById(Long id) {
 
-                log.info("Fetching seat. SeatId={}", id);
-
-                Seat seat = seatRepository.findById(id)
-                                .orElseThrow(() -> {
-
-                                        log.warn("Seat not found. SeatId={}", id);
-
-                                        return new ResourceNotFoundException(
-                                                        "Seat not found with ID: " + id);
-                                });
-
-                log.info("Seat fetched successfully. SeatId={}", id);
+                Seat seat = seatRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Seat not found with ID: " + id));
 
                 return seatMapper.toDto(seat);
         }
@@ -131,27 +124,96 @@ public class SeatServiceImple implements SeatService {
         @Transactional(readOnly = true)
         public List<SeatResDTO> getSeatsByFlight(Long flightId) {
 
-                log.info("Fetching seats for FlightId={}", flightId);
-
-                flightRepository.findById(flightId)
-                                .orElseThrow(() -> {
-
-                                        log.warn("Flight not found. FlightId={}", flightId);
-
-                                        return new FlightNotFoundException(flightId);
-                                });
-
-                List<SeatResDTO> seats = seatRepository.findByFlightId(flightId)
-                                .stream()
-                                .map(seatMapper::toDto)
-                                .toList();
+                Long flightInstanceId = flightId;
 
                 log.info(
-                                "Fetched {} seats for FlightId={}",
-                                seats.size(),
-                                flightId);
+                                "Fetching seats for FlightInstanceId={}",
+                                flightInstanceId);
 
-                return seats;
+                FlightInstance flightInstance = flightInstanceRepository
+                                .findById(flightInstanceId)
+                                .orElseThrow(() -> {
+
+                                        log.warn(
+                                                        "Flight instance not found. FlightInstanceId={}",
+                                                        flightInstanceId);
+
+                                        return new ResourceNotFoundException(
+                                                        "Flight Instance with ID "
+                                                                        + flightInstanceId
+                                                                        + " not found.");
+                                });
+
+                Long masterFlightId = flightInstance
+                                .getSchedule()
+                                .getFlight()
+                                .getId();
+
+                List<Seat> physicalSeats = seatRepository.findByFlightId(
+                                masterFlightId);
+
+                List<FlightInstanceSeat> instanceSeats = flightInstanceSeatRepository
+                                .findByFlightInstanceId(
+                                                flightInstanceId);
+
+                Map<Long, FlightInstanceSeat> instanceSeatMap = instanceSeats.stream()
+                                .collect(
+                                                Collectors.toMap(
+                                                                fis -> fis.getSeat().getId(),
+                                                                fis -> fis));
+
+                List<SeatResDTO> result = new ArrayList<>();
+
+                for (Seat seat : physicalSeats) {
+
+                        SeatResDTO dto = seatMapper.toDto(seat);
+
+                        dto.setFlightId(
+                                        flightInstanceId);
+
+                        FlightInstanceSeat instanceSeat = instanceSeatMap.get(
+                                        seat.getId());
+
+                        if (instanceSeat != null) {
+
+                                /*
+                                 * Date-specific status.
+                                 */
+                                dto.setSeatStatus(
+                                                instanceSeat.getSeatStatus());
+
+                                dto.setBookingReference(
+                                                instanceSeat.getBookingReference());
+
+                                dto.setReservedAt(
+                                                instanceSeat.getReservedAt());
+
+                        } else {
+
+                                /*
+                                 * If the instance seat has not been
+                                 * generated yet, show it as available.
+                                 *
+                                 * We should later make sure instance seats
+                                 * are generated when FlightInstance is created.
+                                 */
+                                dto.setSeatStatus(
+                                                SeatStatus.AVAILABLE);
+
+                                dto.setBookingReference(null);
+
+                                dto.setReservedAt(null);
+                        }
+
+                        result.add(dto);
+                }
+
+                log.info(
+                                "Fetched {} seats for FlightInstanceId={}",
+                                result.size(),
+                                flightInstanceId);
+
+                return result;
         }
 
         @Override
@@ -160,46 +222,27 @@ public class SeatServiceImple implements SeatService {
                         Long id,
                         SeatReqDTO request) {
 
-                log.info(
-                                "Updating seat. SeatId={}, FlightId={}",
-                                id,
-                                request.getFlightId());
+                Seat seat = seatRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Seat not found with ID: " + id));
 
-                Seat seat = seatRepository.findById(id)
-                                .orElseThrow(() -> {
-
-                                        log.warn("Seat not found. SeatId={}", id);
-
-                                        return new ResourceNotFoundException(
-                                                        "Seat not found with ID: " + id);
-                                });
-
-                Flight flight = flightRepository.findById(request.getFlightId())
-                                .orElseThrow(() -> {
-
-                                        log.warn(
-                                                        "Flight not found. FlightId={}",
-                                                        request.getFlightId());
-
-                                        return new FlightNotFoundException(
-                                                        request.getFlightId());
-                                });
+                Flight flight = flightRepository
+                                .findById(request.getFlightId())
+                                .orElseThrow(() -> new FlightNotFoundException(
+                                                request.getFlightId()));
 
                 String seatNumber = request.getSeatNumber()
                                 .trim()
                                 .toUpperCase();
 
-                seatRepository.findByFlightIdAndSeatNumber(
-                                request.getFlightId(),
-                                seatNumber)
+                seatRepository
+                                .findByFlightIdAndSeatNumber(
+                                                request.getFlightId(),
+                                                seatNumber)
                                 .ifPresent(existingSeat -> {
 
                                         if (!existingSeat.getId().equals(id)) {
-
-                                                log.warn(
-                                                                "Duplicate seat number. FlightId={}, SeatNumber={}",
-                                                                request.getFlightId(),
-                                                                seatNumber);
 
                                                 throw new SeatAlreadyBookedException(
                                                                 "Seat " + seatNumber
@@ -212,19 +255,21 @@ public class SeatServiceImple implements SeatService {
                                 seat);
 
                 seat.setFlight(flight);
+
                 seat.setSeatNumber(seatNumber);
 
                 String numericPart = seatNumber.replaceAll("[^0-9]", "");
+
+                if (numericPart.isEmpty()) {
+
+                        throw new IllegalArgumentException(
+                                        "Seat number must contain a numeric part.");
+                }
 
                 seat.setSeatIndex(
                                 Integer.parseInt(numericPart));
 
                 Seat updatedSeat = seatRepository.save(seat);
-
-                log.info(
-                                "Seat updated successfully. SeatId={}, SeatNumber={}",
-                                updatedSeat.getId(),
-                                updatedSeat.getSeatNumber());
 
                 return seatMapper.toDto(updatedSeat);
         }
@@ -233,20 +278,12 @@ public class SeatServiceImple implements SeatService {
         @Transactional
         public void deleteSeat(Long id) {
 
-                log.info("Deleting seat. SeatId={}", id);
-
-                Seat seat = seatRepository.findById(id)
-                                .orElseThrow(() -> {
-
-                                        log.warn("Seat not found. SeatId={}", id);
-
-                                        return new ResourceNotFoundException(
-                                                        "Seat not found with ID: " + id);
-                                });
+                Seat seat = seatRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Seat not found with ID: " + id));
 
                 seatRepository.delete(seat);
-
-                log.info("Seat deleted successfully. SeatId={}", id);
         }
 
         @Override
@@ -255,53 +292,52 @@ public class SeatServiceImple implements SeatService {
                         Long flightId,
                         CabinClass cabinClass) {
 
+                Long flightInstanceId = flightId;
+
                 log.info(
-                                "Fetching seat availability. FlightId={}, CabinClass={}",
-                                flightId,
+                                "Fetching seat availability. FlightInstanceId={}, CabinClass={}",
+                                flightInstanceId,
                                 cabinClass);
 
-                flightRepository.findById(flightId)
-                                .orElseThrow(() -> {
+                flightInstanceRepository
+                                .findById(flightInstanceId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Flight Instance with ID "
+                                                                + flightInstanceId
+                                                                + " not found."));
 
-                                        log.warn(
-                                                        "Flight not found. FlightId={}",
-                                                        flightId);
+                long availableSeats = flightInstanceSeatRepository
+                                .countByFlightInstanceIdAndSeat_CabinClassAndSeatStatus(
+                                                flightInstanceId,
+                                                cabinClass,
+                                                SeatStatus.AVAILABLE);
 
-                                        return new FlightNotFoundException(flightId);
-                                });
+                long bookedSeats = flightInstanceSeatRepository
+                                .countByFlightInstanceIdAndSeat_CabinClassAndSeatStatus(
+                                                flightInstanceId,
+                                                cabinClass,
+                                                SeatStatus.BOOKED);
 
-                long availableSeats = seatRepository.countByFlightIdAndCabinClassAndSeatStatus(
-                                flightId,
-                                cabinClass,
-                                SeatStatus.AVAILABLE);
+                long heldSeats = flightInstanceSeatRepository
+                                .countByFlightInstanceIdAndSeat_CabinClassAndSeatStatus(
+                                                flightInstanceId,
+                                                cabinClass,
+                                                SeatStatus.HELD);
 
-                long bookedSeats = seatRepository.countByFlightIdAndCabinClassAndSeatStatus(
-                                flightId,
-                                cabinClass,
-                                SeatStatus.BOOKED);
+                long blockedSeats = flightInstanceSeatRepository
+                                .countByFlightInstanceIdAndSeat_CabinClassAndSeatStatus(
+                                                flightInstanceId,
+                                                cabinClass,
+                                                SeatStatus.BLOCKED);
 
-                long heldSeats = seatRepository.countByFlightIdAndCabinClassAndSeatStatus(
-                                flightId,
-                                cabinClass,
-                                SeatStatus.HELD);
+                long totalSeats = availableSeats
+                                + bookedSeats
+                                + heldSeats
+                                + blockedSeats;
 
-                long blockedSeats = seatRepository.countByFlightIdAndCabinClassAndSeatStatus(
-                                flightId,
-                                cabinClass,
-                                SeatStatus.BLOCKED);
-
-                long totalSeats = availableSeats +
-                                bookedSeats +
-                                heldSeats +
-                                blockedSeats;
-
-                log.info(
-                                "Seat availability fetched successfully. FlightId={}, Available={}",
-                                flightId,
-                                availableSeats);
-
-                return SeatAvailabilityResDTO.builder()
-                                .flightId(flightId)
+                return SeatAvailabilityResDTO
+                                .builder()
+                                .flightId(flightInstanceId)
                                 .cabinClass(cabinClass)
                                 .totalSeats(totalSeats)
                                 .availableSeats(availableSeats)
@@ -316,64 +352,68 @@ public class SeatServiceImple implements SeatService {
         public List<String> holdSeats(
                         SeatReservationReqDTO request) {
 
+                Long flightInstanceId = request.getFlightId();
+
                 log.info(
-                                "Holding seats. FlightId={}, BookingReference={}",
-                                request.getFlightId(),
+                                "Holding seats. FlightInstanceId={}, BookingReference={}",
+                                flightInstanceId,
                                 request.getBookingReference());
 
-                Flight flight = flightRepository.findById(request.getFlightId())
-                                .orElseThrow(() -> {
-
-                                        log.warn(
-                                                        "Flight not found. FlightId={}",
-                                                        request.getFlightId());
-
-                                        return new FlightNotFoundException(
-                                                        request.getFlightId());
-                                });
+                /*
+                 * Verify FlightInstance.
+                 */
+                flightInstanceRepository
+                                .findById(flightInstanceId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Flight Instance with ID "
+                                                                + flightInstanceId
+                                                                + " not found."));
 
                 LocalDateTime holdTime = LocalDateTime.now();
 
-                List<Seat> seatsToUpdate = new ArrayList<>();
+                List<FlightInstanceSeat> seatsToUpdate = new ArrayList<>();
 
                 for (String seatNumber : request.getSeatNumbers()) {
 
-                        String normalizedSeat = seatNumber.trim().toUpperCase();
+                        String normalizedSeat = seatNumber
+                                        .trim()
+                                        .toUpperCase();
 
-                        Seat seat = seatRepository.findByFlightIdAndSeatNumber(
-                                        flight.getId(),
-                                        normalizedSeat)
-                                        .orElseThrow(() -> {
+                        FlightInstanceSeat instanceSeat = flightInstanceSeatRepository
+                                        .findByFlightInstanceIdAndSeat_SeatNumber(
+                                                        flightInstanceId,
+                                                        normalizedSeat)
+                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                        "Seat "
+                                                                        + normalizedSeat
+                                                                        + " not found for this flight instance."));
 
-                                                log.warn(
-                                                                "Seat not found. SeatNumber={}",
-                                                                normalizedSeat);
-
-                                                return new ResourceNotFoundException(
-                                                                "Seat " + normalizedSeat + " not found.");
-                                        });
-
-                        if (seat.getSeatStatus() != SeatStatus.AVAILABLE) {
-
-                                log.warn(
-                                                "Seat already reserved. SeatNumber={}",
-                                                normalizedSeat);
+                        if (instanceSeat.getSeatStatus() != SeatStatus.AVAILABLE) {
 
                                 throw new SeatAlreadyBookedException(
-                                                "Seat " + normalizedSeat + " is not available.");
+                                                "Seat "
+                                                                + normalizedSeat
+                                                                + " is not available.");
                         }
 
-                        seat.setSeatStatus(SeatStatus.HELD);
-                        seat.setBookingReference(request.getBookingReference());
-                        seat.setReservedAt(holdTime);
+                        instanceSeat.setSeatStatus(
+                                        SeatStatus.HELD);
 
-                        seatsToUpdate.add(seat);
+                        instanceSeat.setBookingReference(
+                                        request.getBookingReference());
+
+                        instanceSeat.setReservedAt(
+                                        holdTime);
+
+                        seatsToUpdate.add(
+                                        instanceSeat);
                 }
 
-                seatRepository.saveAll(seatsToUpdate);
+                flightInstanceSeatRepository
+                                .saveAll(seatsToUpdate);
 
                 log.info(
-                                "{} seats held successfully for BookingReference={}",
+                                "{} seats held successfully. BookingReference={}",
                                 seatsToUpdate.size(),
                                 request.getBookingReference());
 
@@ -383,77 +423,191 @@ public class SeatServiceImple implements SeatService {
         @Override
         @Transactional
         public SeatReservationResponse reserveSeats(
-                        Long flightId,
-                        CabinClass cabinClass,
-                        Integer seatCount,
-                        String bookingReference) {
+                        SeatReservationReqDTO request) {
+
+                Long flightInstanceId = request.getFlightId();
+
+                String bookingReference = request.getBookingReference();
+
+                List<String> requestedSeatNumbers = request.getSeatNumbers();
+
+                CabinClass cabinClass = request.getCabinClass();
+
+                Integer seatCount = request.getSeatCount();
 
                 log.info(
-                                "Reserving {} seats. FlightId={}, CabinClass={}, BookingReference={}",
-                                seatCount,
-                                flightId,
+                                "Reserving seats. FlightInstanceId={}, CabinClass={}, SeatCount={}, SelectedSeats={}, BookingReference={}",
+                                flightInstanceId,
                                 cabinClass,
+                                seatCount,
+                                requestedSeatNumbers,
                                 bookingReference);
 
-                Flight flight = flightRepository.findById(flightId)
-                                .orElseThrow(() -> {
+                FlightInstance flightInstance = flightInstanceRepository
+                                .findById(flightInstanceId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Flight Instance with ID "
+                                                                + flightInstanceId
+                                                                + " not found."));
 
-                                        log.warn(
-                                                        "Flight not found. FlightId={}",
-                                                        flightId);
+                if (seatCount == null || seatCount <= 0) {
 
-                                        return new FlightNotFoundException(flightId);
-                                });
+                        throw new IllegalArgumentException(
+                                        "Seat count must be greater than zero.");
+                }
 
-                List<Seat> availableSeats = seatRepository.findByFlightIdAndCabinClassAndSeatStatusOrderBySeatIndexAsc(
-                                flight.getId(),
-                                cabinClass,
-                                SeatStatus.AVAILABLE);
+                if (cabinClass == null) {
 
-                if (availableSeats.size() < seatCount) {
+                        throw new IllegalArgumentException(
+                                        "Cabin class is required.");
+                }
 
-                        log.warn(
-                                        "Insufficient seats. Requested={}, Available={}",
-                                        seatCount,
-                                        availableSeats.size());
+                List<FlightInstanceSeat> seatsToReserve = new ArrayList<>();
 
-                        throw new SeatAlreadyBookedException(
-                                        "Only " + availableSeats.size() + " seats available.");
+                if (requestedSeatNumbers != null
+                                && !requestedSeatNumbers.isEmpty()) {
+
+                        if (requestedSeatNumbers.size() != seatCount) {
+
+                                throw new IllegalArgumentException(
+                                                "Number of selected seats must match passenger count.");
+                        }
+
+                        for (String seatNumber : requestedSeatNumbers) {
+
+                                if (seatNumber == null || seatNumber.isBlank()) {
+
+                                        throw new IllegalArgumentException(
+                                                        "Seat number cannot be empty.");
+                                }
+
+                                String normalizedSeatNumber = seatNumber
+                                                .trim()
+                                                .toUpperCase();
+
+                                FlightInstanceSeat instanceSeat = flightInstanceSeatRepository
+                                                .findByFlightInstanceIdAndSeatNumberForUpdate(
+                                                                flightInstanceId,
+                                                                normalizedSeatNumber)
+                                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                                "Seat "
+                                                                                + normalizedSeatNumber
+                                                                                + " not found for this flight."));
+
+                                log.info(
+                                                "Locked seat row. Seat={}, InstanceSeatId={}, Status={}, Version={}",
+                                                normalizedSeatNumber,
+                                                instanceSeat.getId(),
+                                                instanceSeat.getSeatStatus(),
+                                                instanceSeat.getVersion());
+
+                                if (instanceSeat.getSeat().getCabinClass() != cabinClass) {
+
+                                        throw new SeatAlreadyBookedException(
+                                                        "Seat "
+                                                                        + normalizedSeatNumber
+                                                                        + " does not belong to "
+                                                                        + cabinClass
+                                                                        + " cabin.");
+                                }
+
+                                if (instanceSeat.getSeatStatus() != SeatStatus.AVAILABLE) {
+
+                                        throw new SeatAlreadyBookedException(
+                                                        "Seat "
+                                                                        + normalizedSeatNumber
+                                                                        + " is not available. Current status: "
+                                                                        + instanceSeat.getSeatStatus());
+                                }
+
+                                if (seatsToReserve.contains(instanceSeat)) {
+
+                                        throw new IllegalArgumentException(
+                                                        "Duplicate seat selected: "
+                                                                        + normalizedSeatNumber);
+                                }
+
+                                seatsToReserve.add(instanceSeat);
+                        }
+                }
+
+                else {
+
+                        log.info(
+                                        "No seats selected. Automatically assigning seats.");
+
+                        List<FlightInstanceSeat> availableSeats = flightInstanceSeatRepository
+                                        .findAvailableSeatsForUpdate(
+                                                        flightInstanceId,
+                                                        cabinClass,
+                                                        SeatStatus.AVAILABLE,
+                                                        PageRequest.of(0, seatCount));
+
+                        if (availableSeats.size() < seatCount) {
+
+                                throw new SeatAlreadyBookedException(
+                                                "Only "
+                                                                + availableSeats.size()
+                                                                + " seats available.");
+                        }
+
+                        seatsToReserve.addAll(availableSeats);
                 }
 
                 LocalDateTime now = LocalDateTime.now();
 
                 List<SeatResDTO> reservedSeats = new ArrayList<>();
 
-                for (int i = 0; i < seatCount; i++) {
+                for (FlightInstanceSeat instanceSeat : seatsToReserve) {
 
-                        Seat seat = availableSeats.get(i);
+                        instanceSeat.setSeatStatus(
+                                        SeatStatus.HELD);
 
-                        seat.setSeatStatus(SeatStatus.HELD);
-                        seat.setBookingReference(bookingReference);
-                        seat.setReservedAt(now);
+                        instanceSeat.setBookingReference(
+                                        bookingReference);
 
-                        seatRepository.save(seat);
+                        instanceSeat.setReservedAt(
+                                        now);
+
+                        Seat physicalSeat = instanceSeat.getSeat();
 
                         reservedSeats.add(
                                         SeatResDTO.builder()
-                                                        .id(seat.getId())
-                                                        .seatNumber(seat.getSeatNumber())
-                                                        .cabinClass(seat.getCabinClass())
-                                                        .seatStatus(seat.getSeatStatus())
-                                                        .bookingReference(seat.getBookingReference())
-                                                        .reservedAt(seat.getReservedAt())
-                                                        .flightId(flight.getId())
-                                                        .flightNumber(flight.getFlightNumber())
+                                                        .id(physicalSeat.getId())
+                                                        .seatNumber(
+                                                                        physicalSeat.getSeatNumber())
+                                                        .cabinClass(
+                                                                        physicalSeat.getCabinClass())
+                                                        .seatStatus(
+                                                                        instanceSeat.getSeatStatus())
+                                                        .bookingReference(
+                                                                        instanceSeat.getBookingReference())
+                                                        .reservedAt(
+                                                                        instanceSeat.getReservedAt())
+                                                        .flightId(
+                                                                        flightInstanceId)
+                                                        .flightNumber(
+                                                                        flightInstance
+                                                                                        .getSchedule()
+                                                                                        .getFlight()
+                                                                                        .getFlightNumber())
                                                         .build());
                 }
 
-                log.info(
-                                "{} seats reserved successfully. BookingReference={}",
-                                reservedSeats.size(),
-                                bookingReference);
+                flightInstanceSeatRepository.saveAll(
+                                seatsToReserve);
 
-                return SeatReservationResponse.builder()
+                log.info(
+                                "{} seats held successfully. BookingReference={}, Seats={}",
+                                reservedSeats.size(),
+                                bookingReference,
+                                reservedSeats.stream()
+                                                .filter(seat -> seat != null)
+                                                .map(seat -> seat.getSeatNumber())
+                                                .filter(seatNumber -> seatNumber != null)
+                                                .toList());
+                return SeatReservationResponse
+                                .builder()
                                 .bookingReference(bookingReference)
                                 .reservedCount(reservedSeats.size())
                                 .seats(reservedSeats)
@@ -462,44 +616,44 @@ public class SeatServiceImple implements SeatService {
 
         @Override
         @Transactional
-        public void confirmSeats(String bookingReference) {
+        public void confirmSeats(
+                        String bookingReference) {
 
                 log.info(
                                 "Confirming seats. BookingReference={}",
                                 bookingReference);
 
-                List<Seat> seats = seatRepository.findByBookingReference(
-                                bookingReference);
+                List<FlightInstanceSeat> seats = flightInstanceSeatRepository
+                                .findByBookingReference(
+                                                bookingReference);
 
                 if (seats.isEmpty()) {
-
-                        log.warn(
-                                        "No seats found. BookingReference={}",
-                                        bookingReference);
 
                         throw new ResourceNotFoundException(
                                         "No seats found for booking reference: "
                                                         + bookingReference);
                 }
 
-                for (Seat seat : seats) {
+                for (FlightInstanceSeat instanceSeat : seats) {
 
-                        if (seat.getSeatStatus() != SeatStatus.HELD) {
-
-                                log.warn(
-                                                "Seat is not HELD. SeatNumber={}",
-                                                seat.getSeatNumber());
+                        if (instanceSeat.getSeatStatus() != SeatStatus.HELD) {
 
                                 throw new SeatAlreadyBookedException(
-                                                "Seat " + seat.getSeatNumber()
+                                                "Seat "
+                                                                + instanceSeat
+                                                                                .getSeat()
+                                                                                .getSeatNumber()
                                                                 + " is not currently held.");
                         }
 
-                        seat.setSeatStatus(SeatStatus.BOOKED);
-                        seat.setReservedAt(null);
+                        instanceSeat.setSeatStatus(
+                                        SeatStatus.BOOKED);
+
+                        instanceSeat.setReservedAt(null);
                 }
 
-                seatRepository.saveAll(seats);
+                flightInstanceSeatRepository
+                                .saveAll(seats);
 
                 log.info(
                                 "{} seats confirmed successfully. BookingReference={}",
@@ -509,14 +663,16 @@ public class SeatServiceImple implements SeatService {
 
         @Override
         @Transactional
-        public void releaseSeats(String bookingReference) {
+        public void releaseSeats(
+                        String bookingReference) {
 
                 log.info(
                                 "Releasing seats. BookingReference={}",
                                 bookingReference);
 
-                List<Seat> seats = seatRepository.findByBookingReference(
-                                bookingReference);
+                List<FlightInstanceSeat> seats = flightInstanceSeatRepository
+                                .findByBookingReference(
+                                                bookingReference);
 
                 if (seats.isEmpty()) {
 
@@ -529,20 +685,27 @@ public class SeatServiceImple implements SeatService {
 
                 int releasedCount = 0;
 
-                for (Seat seat : seats) {
+                for (FlightInstanceSeat instanceSeat : seats) {
 
-                        if (seat.getSeatStatus() == SeatStatus.HELD
-                                        || seat.getSeatStatus() == SeatStatus.BOOKED) {
+                        if (instanceSeat.getSeatStatus() == SeatStatus.HELD
+                                        ||
+                                        instanceSeat.getSeatStatus() == SeatStatus.BOOKED) {
 
-                                seat.setSeatStatus(SeatStatus.AVAILABLE);
-                                seat.setBookingReference(null);
-                                seat.setReservedAt(null);
+                                instanceSeat.setSeatStatus(
+                                                SeatStatus.AVAILABLE);
+
+                                instanceSeat.setBookingReference(
+                                                null);
+
+                                instanceSeat.setReservedAt(
+                                                null);
 
                                 releasedCount++;
                         }
                 }
 
-                seatRepository.saveAll(seats);
+                flightInstanceSeatRepository
+                                .saveAll(seats);
 
                 log.info(
                                 "{} seats released successfully. BookingReference={}",
@@ -555,24 +718,16 @@ public class SeatServiceImple implements SeatService {
         public void generateSeats(Long flightId) {
 
                 log.info(
-                                "Generating seats. FlightId={}",
+                                "Generating physical seats. FlightId={}",
                                 flightId);
 
-                Flight flight = flightRepository.findById(flightId)
-                                .orElseThrow(() -> {
+                Flight flight = flightRepository
+                                .findById(flightId)
+                                .orElseThrow(() -> new FlightNotFoundException(
+                                                flightId));
 
-                                        log.warn(
-                                                        "Flight not found. FlightId={}",
-                                                        flightId);
-
-                                        return new FlightNotFoundException(flightId);
-                                });
-
-                if (seatRepository.existsByFlightId(flightId)) {
-
-                        log.warn(
-                                        "Seats already generated. FlightId={}",
-                                        flightId);
+                if (seatRepository
+                                .existsByFlightId(flightId)) {
 
                         throw new IllegalStateException(
                                         "Seats have already been generated for Flight ID: "
@@ -614,7 +769,7 @@ public class SeatServiceImple implements SeatService {
                 seatRepository.saveAll(seats);
 
                 log.info(
-                                "{} seats generated successfully. FlightId={}",
+                                "{} physical seats generated. FlightId={}",
                                 seats.size(),
                                 flightId);
         }
@@ -635,15 +790,64 @@ public class SeatServiceImple implements SeatService {
                         Seat seat = Seat.builder()
                                         .flight(flight)
                                         .cabinClass(cabinClass)
-                                        .seatNumber(prefix + String.format("%03d", i))
+                                        .seatNumber(
+                                                        prefix + String.format("%03d", i))
                                         .seatIndex(i)
-                                        .seatStatus(SeatStatus.AVAILABLE)
-                                        .bookingReference(null)
-                                        .reservedAt(null)
                                         .build();
 
                         seats.add(seat);
                 }
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public List<SeatResDTO> getSeatsByBookingReference(
+                        String bookingReference) {
+
+                log.info(
+                                "Fetching seats by BookingReference={}",
+                                bookingReference);
+
+                List<FlightInstanceSeat> instanceSeats = flightInstanceSeatRepository
+                                .findByBookingReference(bookingReference);
+
+                if (instanceSeats.isEmpty()) {
+
+                        log.warn(
+                                        "No seats found for BookingReference={}",
+                                        bookingReference);
+
+                        return List.of();
+                }
+
+                return instanceSeats.stream()
+                                .map(instanceSeat -> {
+
+                                        Seat physicalSeat = instanceSeat.getSeat();
+
+                                        FlightInstance flightInstance = instanceSeat.getFlightInstance();
+
+                                        return SeatResDTO.builder()
+                                                        .id(physicalSeat.getId())
+                                                        .seatNumber(
+                                                                        physicalSeat.getSeatNumber())
+                                                        .cabinClass(
+                                                                        physicalSeat.getCabinClass())
+                                                        .seatStatus(
+                                                                        instanceSeat.getSeatStatus())
+                                                        .bookingReference(
+                                                                        instanceSeat.getBookingReference())
+                                                        .reservedAt(
+                                                                        instanceSeat.getReservedAt())
+                                                        .flightId(
+                                                                        flightInstance.getId())
+                                                        .flightNumber(
+                                                                        flightInstance
+                                                                                        .getSchedule()
+                                                                                        .getFlight()
+                                                                                        .getFlightNumber())
+                                                        .build();
+                                })
+                                .toList();
+        }
 }

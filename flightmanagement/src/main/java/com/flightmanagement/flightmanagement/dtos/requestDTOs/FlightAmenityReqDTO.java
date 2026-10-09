@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class FlightAmenityReqDTO {
+    
     @NotNull(message = "Flight ID is required")
     private Long flightId;
 

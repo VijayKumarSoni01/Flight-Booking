@@ -1,39 +1,36 @@
 package com.flightmanagement.flightmanagement.service.implementation.publicImpl;
 
-
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.BaggagePolicyResDTO;
+import com.flightmanagement.flightmanagement.dtos.responseDTOs.FlightAmenityResDTO;
 import com.flightmanagement.flightmanagement.dtos.responseDTOs.PublicFlightResDTO;
 import com.flightmanagement.flightmanagement.entity.BaggagePolicy;
 import com.flightmanagement.flightmanagement.entity.Flight;
-import com.flightmanagement.flightmanagement.mapper.PublicFlightMapper;
-import com.flightmanagement.flightmanagement.repository.BaggageRepository;
-import com.flightmanagement.flightmanagement.repository.FlightRepository;
+import com.flightmanagement.flightmanagement.entity.FlightAmenity;
+import com.flightmanagement.flightmanagement.entity.FlightFare;
+import com.flightmanagement.flightmanagement.entity.FlightInstance;
+import com.flightmanagement.flightmanagement.mapper.FlightAmenityMapper;
+import com.flightmanagement.flightmanagement.repository.FlightAmenityRepository;
+import com.flightmanagement.flightmanagement.repository.FlightInstanceRepository;
 import com.flightmanagement.flightmanagement.service.interFace.publicService.PublicFlightService;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Service
 @RequiredArgsConstructor
-public class PublicFlightServiceImpl 
+public class PublicFlightServiceImpl
         implements PublicFlightService {
 
+    private final FlightInstanceRepository flightInstanceRepository;
 
+    private final FlightAmenityRepository flightAmenityRepository;
 
-    private final FlightRepository flightRepository;
-
-    private final BaggageRepository baggageRepository;
-
-    private final PublicFlightMapper publicFlightMapper;
-
-
+    private final FlightAmenityMapper flightAmenityMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -42,208 +39,242 @@ public class PublicFlightServiceImpl
             String destination,
             LocalDate date) {
 
+        if (source == null || source.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Source is required.");
+        }
 
-        source = source.trim();
+        if (destination == null || destination.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Destination is required.");
+        }
 
-        destination = destination.trim();
+        if (date == null) {
+            throw new IllegalArgumentException(
+                    "Departure date is required.");
+        }
 
-
-
-        LocalDateTime startDate =
-                date.atStartOfDay();
-
-
-
-        LocalDateTime endDate =
-                date.plusDays(1)
-                    .atStartOfDay();
-
-
-
-        return flightRepository
-                .searchFlights(
-                        source,
-                        destination,
-                        startDate,
-                        endDate
-                )
+        return flightInstanceRepository
+                .searchPublicFlights(
+                        source.trim(),
+                        destination.trim(),
+                        date)
                 .stream()
-                .map(this::mapFlightWithFare)
+                .map(this::mapFlightInstance)
                 .toList();
-
     }
-
-
-
-
-
 
     @Override
     @Transactional(readOnly = true)
     public PublicFlightResDTO getFlightDetails(
-            Long flightId) {
+            Long flightInstanceId) {
 
+        FlightInstance instance =
+                flightInstanceRepository
+                        .findById(flightInstanceId)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Flight instance not found"));
+
+        return mapFlightInstance(instance);
+    }
+
+    private PublicFlightResDTO mapFlightInstance(
+            FlightInstance instance) {
 
         Flight flight =
-                flightRepository
-                .findFlightDetailsById(flightId)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "Flight not found")
-                );
-
-
+                instance
+                        .getSchedule()
+                        .getFlight();
 
         PublicFlightResDTO dto =
-                mapFlightWithFare(flight);
+                PublicFlightResDTO.builder()
 
+                        .id(instance.getId())
 
+                        .flightId(flight.getId())
 
-        List<BaggagePolicy> baggagePolicies =
-                baggageRepository
-                .findByFlightId(flightId);
+                        .flightNumber(
+                                flight.getFlightNumber())
 
+                        .airlineName(
+                                flight.getAirline().getName())
 
+                        .airlineCode(
+                                flight.getAirline().getIataCode())
+
+                        .originAirportName(
+                                flight
+                                        .getOriginAirport()
+                                        .getName())
+
+                        .originAirportCode(
+                                flight
+                                        .getOriginAirport()
+                                        .getIataCode())
+
+                        .destinationAirportName(
+                                flight
+                                        .getDestinationAirport()
+                                        .getName())
+
+                        .destinationAirportCode(
+                                flight
+                                        .getDestinationAirport()
+                                        .getIataCode())
+
+                        .currency(
+                                flight.getCurrency())
+
+                        .departureTime(
+                                instance.getDepartureTime())
+
+                        .arrivalTime(
+                                instance.getArrivalTime())
+
+                        .departureTerminal(
+                                flight.getDepartureTerminal())
+
+                        .arrivalTerminal(
+                                flight.getArrivalTerminal())
+
+                        .durationMinutes(
+                                flight.getDurationMinutes())
+
+                        .build();
+
+        mapFares(
+                flight,
+                dto);
+
+        mapBaggage(
+                flight,
+                dto);
+
+        mapAmenities(
+                flight,
+                dto);
+
+        return dto;
+    }
+
+    private void mapFares(
+            Flight flight,
+            PublicFlightResDTO dto) {
+
+        if (flight.getFlightFares() == null) {
+            return;
+        }
+
+        for (FlightFare fare :
+                flight.getFlightFares()) {
+
+            switch (fare.getCabinClass()) {
+
+                case ECONOMY:
+
+                    dto.setEconomyPrice(
+                            fare.getAdultFare());
+
+                    break;
+
+                case PREMIUM_ECONOMY:
+
+                    dto.setPremiumEconomyPrice(
+                            fare.getAdultFare());
+
+                    break;
+
+                case BUSINESS:
+
+                    dto.setBusinessPrice(
+                            fare.getAdultFare());
+
+                    break;
+
+                case FIRST:
+
+                    dto.setFirstPrice(
+                            fare.getAdultFare());
+
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    private void mapBaggage(
+            Flight flight,
+            PublicFlightResDTO dto) {
+
+        if (flight.getBaggagePolicies() == null) {
+
+            dto.setBaggagePolicies(
+                    List.of());
+
+            return;
+        }
 
         dto.setBaggagePolicies(
-
-                baggagePolicies
-                .stream()
-                .map(this::mapBaggage)
-                .toList()
-
-        );
-
-
-
-        return dto;
-
+                flight.getBaggagePolicies()
+                        .stream()
+                        .map(this::mapBaggage)
+                        .toList());
     }
-
-
-
-
-
-
-
-    private PublicFlightResDTO mapFlightWithFare(
-            Flight flight) {
-
-
-        PublicFlightResDTO dto =
-                publicFlightMapper.toDto(flight);
-
-
-
-        flight.getFlightFares()
-                .forEach(fare -> {
-
-
-
-                    switch(fare.getCabinClass()) {
-
-
-                        case ECONOMY ->
-
-                                dto.setEconomyPrice(
-                                        fare.getAdultFare()
-                                );
-
-
-
-                        case PREMIUM_ECONOMY ->
-
-                                dto.setPremiumEconomyPrice(
-                                        fare.getAdultFare()
-                                );
-
-
-
-                        case BUSINESS ->
-
-                                dto.setBusinessPrice(
-                                        fare.getAdultFare()
-                                );
-
-
-
-                        case FIRST ->
-
-                                dto.setFirstPrice(
-                                        fare.getAdultFare()
-                                );
-
-                    }
-
-
-
-                    dto.setCurrency(
-                            fare.getCurrency()
-                    );
-
-
-                });
-
-
-
-        return dto;
-
-    }
-
-
-
-
-
-
 
     private BaggagePolicyResDTO mapBaggage(
             BaggagePolicy baggage) {
 
-
-        return BaggagePolicyResDTO
-                .builder()
-
+        return BaggagePolicyResDTO.builder()
 
                 .id(
-                        baggage.getId()
-                )
-
+                        baggage.getId())
 
                 .flightId(
-                        baggage.getFlight()
-                                .getId()
-                )
-
+                        baggage
+                                .getFlight()
+                                .getId())
 
                 .flightNumber(
-                        baggage.getFlight()
-                                .getFlightNumber()
-                )
-
+                        baggage
+                                .getFlight()
+                                .getFlightNumber())
 
                 .cabinClass(
-                        baggage.getCabinClass()
-                )
-
+                        baggage.getCabinClass())
 
                 .cabinBaggageKg(
-                        baggage.getCabinBaggageKg()
-                )
-
+                        baggage.getCabinBaggageKg())
 
                 .checkinBaggageKg(
-                        baggage.getCheckinBaggageKg()
-                )
-
+                        baggage.getCheckinBaggageKg())
 
                 .extraBaggagePricePerKg(
-                        baggage.getExtraBaggagePricePerKg()
-                )
-
+                        baggage
+                                .getExtraBaggagePricePerKg())
 
                 .build();
-
     }
 
+    private void mapAmenities(
+            Flight flight,
+            PublicFlightResDTO dto) {
 
+        FlightAmenity amenity =
+                flightAmenityRepository
+                        .findByFlightId(flight.getId())
+                        .orElse(null);
+
+        if (amenity == null) {
+            dto.setAmenities(null);
+            return;
+        }
+
+        FlightAmenityResDTO amenityDto =
+                flightAmenityMapper.toDto(amenity);
+
+        dto.setAmenities(amenityDto);
+    }
 }

@@ -42,6 +42,10 @@ public interface FlightMapper {
 
     @Mapping(target = "destinationAirport", ignore = true)
 
+    @Mapping(target = "baggagePolicies", ignore = true)
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "flightFares", ignore = true)
+
     @Mapping(target = "status", ignore = true)
 
     @Mapping(target = "durationMinutes", ignore = true)
@@ -63,6 +67,10 @@ public interface FlightMapper {
     @Mapping(target = "originAirport", ignore = true)
 
     @Mapping(target = "destinationAirport", ignore = true)
+
+    @Mapping(target = "baggagePolicies", ignore = true)
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "flightFares", ignore = true)
 
     @Mapping(target = "status", ignore = true)
 

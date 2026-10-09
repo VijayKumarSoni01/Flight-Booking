@@ -1,7 +1,6 @@
 package com.flightmanagement.flightmanagement.dtos.requestDTOs;
 
 import com.flightmanagement.flightmanagement.enums.CabinClass;
-import com.flightmanagement.flightmanagement.enums.SeatStatus;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,17 +13,12 @@ import lombok.*;
 @Builder
 public class SeatReqDTO {
 
-    @NotNull
+    @NotNull(message = "Flight ID is required")
     private Long flightId;
 
-    @NotBlank
+    @NotBlank(message = "Seat number is required")
     private String seatNumber;
 
-    @NotNull
+    @NotNull(message = "Cabin class is required")
     private CabinClass cabinClass;
-
-    @NotNull
-    private SeatStatus seatStatus;
-
-    private String bookingReference;
 }

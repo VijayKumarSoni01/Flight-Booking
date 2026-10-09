@@ -34,6 +34,8 @@ public class CreateBookingRequest {
       @NotNull(message = "Cabin class is required")
       private CabinClass cabinClass;
 
+      private List<String> seatNumbers;
+
       @Size(max = 500)
       private String specialRequest;
 

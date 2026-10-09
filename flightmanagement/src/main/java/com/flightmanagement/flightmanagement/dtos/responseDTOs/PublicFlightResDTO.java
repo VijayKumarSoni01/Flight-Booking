@@ -9,13 +9,13 @@ import com.flightmanagement.flightmanagement.enums.CurrencyCode;
 import lombok.Builder;
 import lombok.Data;
 
-
 @Data
 @Builder
 public class PublicFlightResDTO {
 
-
     private Long id;
+
+    private Long flightId;
 
     private String flightNumber;
 
@@ -53,4 +53,5 @@ public class PublicFlightResDTO {
 
     private List<BaggagePolicyResDTO> baggagePolicies;
 
+    private FlightAmenityResDTO amenities;
 }

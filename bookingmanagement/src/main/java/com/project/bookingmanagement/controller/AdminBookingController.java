@@ -2,6 +2,9 @@ package com.project.bookingmanagement.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,98 +28,95 @@ import lombok.RequiredArgsConstructor;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingController {
 
-    private final BookingService bookingService;
+        private final BookingService bookingService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<BookingSummaryResponse>>> getAllBookings() {
+        @GetMapping
+        public ResponseEntity<ApiResponse<List<BookingSummaryResponse>>> getAllBookings() {
 
-        List<BookingSummaryResponse> response =
-                bookingService.getAllBookings();
+                List<BookingSummaryResponse> response = bookingService.getAllBookings();
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "All bookings fetched successfully."));
-    }
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "All bookings fetched successfully."));
+        }
 
-    @GetMapping("/{bookingId}")
-    public ResponseEntity<ApiResponse<BookingDetailsResponse>> getBookingById(
-            @PathVariable Long bookingId) {
+        @GetMapping("/{bookingId}")
+        public ResponseEntity<ApiResponse<BookingDetailsResponse>> getBookingById(
+                        @PathVariable Long bookingId) {
 
-        BookingDetailsResponse response =
-                bookingService.getBookingById(bookingId);
+                BookingDetailsResponse response = bookingService.getBookingById(bookingId);
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "Booking fetched successfully."));
-    }
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "Booking fetched successfully."));
+        }
 
-    @GetMapping("/reference/{bookingReference}")
-    public ResponseEntity<ApiResponse<BookingResponse>> getBookingByReference(
-            @PathVariable String bookingReference) {
+        @GetMapping("/reference/{bookingReference}")
+        public ResponseEntity<ApiResponse<BookingResponse>> getBookingByReference(
+                        @PathVariable String bookingReference) {
 
-        BookingResponse response =
-                bookingService.getBookingByReference(bookingReference);
+                BookingResponse response = bookingService.getBookingByReference(bookingReference);
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "Booking fetched successfully."));
-    }
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "Booking fetched successfully."));
+        }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<BookingSummaryResponse>>> getBookingsByUser(
-            @PathVariable Long userId) {
+        @GetMapping("/user/{userId}")
+        public ResponseEntity<ApiResponse<Page<BookingSummaryResponse>>> getBookingsByUser(
+                        @PathVariable Long userId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
 
-        List<BookingSummaryResponse> response =
-                bookingService.getBookingsByUser(userId);
+                Pageable pageable = PageRequest.of(page, size);
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "User bookings fetched successfully."));
-    }
+                Page<BookingSummaryResponse> response = bookingService.getBookingsByUser(userId, pageable);
 
-    @PutMapping("/{bookingId}")
-    public ResponseEntity<ApiResponse<BookingResponse>> updateBooking(
-            @PathVariable Long bookingId,
-            @Valid @RequestBody UpdateBookingRequest request) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "User bookings fetched successfully."));
+        }
 
-        BookingResponse response =
-                bookingService.updateBooking(bookingId, request);
+        @PutMapping("/{bookingId}")
+        public ResponseEntity<ApiResponse<BookingResponse>> updateBooking(
+                        @PathVariable Long bookingId,
+                        @Valid @RequestBody UpdateBookingRequest request) {
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "Booking updated successfully."));
-    }
+                BookingResponse response = bookingService.updateBooking(bookingId, request);
 
-    @PostMapping("/{bookingId}/cancel")
-    public ResponseEntity<ApiResponse<BookingCancellationResponse>> cancelBooking(
-            @PathVariable Long bookingId,
-            @Valid @RequestBody CancelBookingRequest request) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "Booking updated successfully."));
+        }
 
-        BookingCancellationResponse response =
-                bookingService.cancelBooking(bookingId, request);
+        @PostMapping("/{bookingId}/cancel")
+        public ResponseEntity<ApiResponse<BookingCancellationResponse>> cancelBooking(
+                        @PathVariable Long bookingId,
+                        @Valid @RequestBody CancelBookingRequest request) {
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "Booking cancelled successfully."));
-    }
+                BookingCancellationResponse response = bookingService.cancelBooking(bookingId, request);
 
-    @PostMapping("/{bookingId}/confirm")
-    public ResponseEntity<ApiResponse<BookingConfirmationResponse>> confirmBooking(
-            @PathVariable Long bookingId) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "Booking cancelled successfully."));
+        }
 
-        BookingConfirmationResponse response =
-                bookingService.confirmBooking(bookingId);
+        @PostMapping("/{bookingId}/confirm")
+        public ResponseEntity<ApiResponse<BookingConfirmationResponse>> confirmBooking(
+                        @PathVariable Long bookingId) {
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        response,
-                        "Booking confirmed successfully."));
-    }
+                BookingConfirmationResponse response = bookingService.confirmBooking(bookingId);
+
+                return ResponseEntity.ok(
+                                ApiResponse.success(
+                                                response,
+                                                "Booking confirmed successfully."));
+        }
 
 }

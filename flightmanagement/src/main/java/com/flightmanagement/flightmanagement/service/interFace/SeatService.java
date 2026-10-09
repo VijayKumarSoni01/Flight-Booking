@@ -32,11 +32,10 @@ public interface SeatService {
     void releaseSeats(String bookingReference);
 
     SeatReservationResponse reserveSeats(
-        Long flightId,
-        CabinClass cabinClass,
-        Integer seatCount,
-        String bookingReference);
+            SeatReservationReqDTO request);
 
-        void generateSeats(Long flightId);
+    void generateSeats(Long flightId);
 
+    List<SeatResDTO> getSeatsByBookingReference(
+            String bookingReference);
 }

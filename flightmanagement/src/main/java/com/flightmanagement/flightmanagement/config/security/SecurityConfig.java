@@ -48,7 +48,8 @@ public class SecurityConfig {
                                                 // Get flight details
                                                 .requestMatchers(
                                                                 HttpMethod.GET,
-                                                                "/api/public/flights/**")
+                                                                "/api/public/flights/**",
+                                                                "/api/public/seats/**")
                                                 .permitAll()
 
                                                 .requestMatchers(HttpMethod.GET, "/api/flights/**").permitAll()

@@ -13,18 +13,19 @@ public interface SeatMapper {
 
     @Mapping(target = "flightId", source = "flight.id")
     @Mapping(target = "flightNumber", source = "flight.flightNumber")
+    @Mapping(target = "seatStatus", ignore = true)
+    @Mapping(target = "bookingReference", ignore = true)
+    @Mapping(target = "reservedAt", ignore = true)
     SeatResDTO toDto(Seat seat);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "flight", ignore = true)
-    @Mapping(target = "reservedAt", ignore = true)
-    @Mapping(target = "seatIndex", ignore = true)   // <-- Add this
+    @Mapping(target = "seatIndex", ignore = true)
     Seat toEntity(SeatReqDTO request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "flight", ignore = true)
-    @Mapping(target = "reservedAt", ignore = true)
-    @Mapping(target = "seatIndex", ignore = true)   // <-- Add this
+    @Mapping(target = "seatIndex", ignore = true)
     void updateEntityFromDto(
             SeatReqDTO request,
             @MappingTarget Seat seat);

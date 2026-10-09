@@ -2,6 +2,9 @@ package com.project.bookingmanagement.service.interfaces;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.project.bookingmanagement.dto.booking.internal.BookingValidationResponse;
 import com.project.bookingmanagement.dto.booking.request.CancelBookingRequest;
 import com.project.bookingmanagement.dto.booking.request.CreateBookingRequest;
@@ -23,7 +26,9 @@ public interface BookingService {
 
     BookingResponse getBookingByReference(String bookingReference);
 
-    List<BookingSummaryResponse> getBookingsByUser(Long userId);
+    Page<BookingSummaryResponse> getBookingsByUser(
+        Long userId,
+        Pageable pageable);
 
     List<BookingSummaryResponse> getAllBookings();
 

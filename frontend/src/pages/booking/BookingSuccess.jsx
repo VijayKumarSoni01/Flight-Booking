@@ -96,6 +96,12 @@ function BookingSuccess() {
                 Departure: {new Date(flight.departureTime).toLocaleString()}
               </p>
             )}
+
+            {booking.seatNumbers?.length > 0 && (
+              <p>
+                <strong>Seat Number:</strong> {booking.seatNumbers.join(", ")}
+              </p>
+            )}
           </div>
         )}
 

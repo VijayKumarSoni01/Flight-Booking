@@ -3,6 +3,7 @@ package com.project.bookingmanagement.dto.booking.response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.project.bookingmanagement.enums.bookingEnum.BookingStatus;
 import com.project.bookingmanagement.enums.bookingEnum.PaymentStatus;
@@ -39,4 +40,6 @@ public class BookingSummaryResponse {
     private PaymentStatus paymentStatus;
 
     private LocalDateTime bookingDate;
+
+    private List<String> seatNumbers;
 }

@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.project.bookingmanagement.config.jwt.CustomUserPrincipal;
 import com.project.bookingmanagement.dto.booking.request.CancelBookingRequest;
@@ -31,7 +33,7 @@ public class UserBookingController {
 
         private final BookingService bookingService;
 
-        @GetMapping("/me")
+        @GetMapping
         public ResponseEntity<ApiResponse<CustomUserPrincipal>> getCurrentUser() {
 
                 CustomUserPrincipal user = SecurityUtils.getCurrentUser();
@@ -46,16 +48,14 @@ public class UserBookingController {
         public ResponseEntity<ApiResponse<BookingConfirmationResponse>> createBooking(
                         @Valid @RequestBody CreateBookingRequest request) {
 
-                System.out.println("========== BOOKING REQUEST ==========");
-                System.out.println(request);
-                System.out.println("====================================");
-
                 BookingConfirmationResponse response = bookingService.createBooking(request);
 
-                return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(ApiResponse.success(
-                                                response,
-                                                "Booking created successfully."));
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(
+                                                ApiResponse.success(
+                                                                response,
+                                                                "Booking created successfully."));
         }
 
         @GetMapping("/{bookingId}")
@@ -74,7 +74,8 @@ public class UserBookingController {
         public ResponseEntity<ApiResponse<BookingResponse>> getBookingByReference(
                         @PathVariable String bookingReference) {
 
-                BookingResponse response = bookingService.getBookingByReference(bookingReference);
+                BookingResponse response = bookingService.getBookingByReference(
+                                bookingReference);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(
@@ -83,11 +84,12 @@ public class UserBookingController {
         }
 
         @GetMapping("/my-bookings")
-        public ResponseEntity<ApiResponse<List<BookingSummaryResponse>>> getMyBookings() {
+        public ResponseEntity<ApiResponse<Page<BookingSummaryResponse>>> getMyBookings(
+                        Pageable pageable) {
 
                 Long userId = SecurityUtils.getCurrentUserId();
 
-                List<BookingSummaryResponse> response = bookingService.getBookingsByUser(userId);
+                Page<BookingSummaryResponse> response = bookingService.getBookingsByUser(userId, pageable);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(
@@ -100,7 +102,9 @@ public class UserBookingController {
                         @PathVariable Long bookingId,
                         @Valid @RequestBody UpdateBookingRequest request) {
 
-                BookingResponse response = bookingService.updateBooking(bookingId, request);
+                BookingResponse response = bookingService.updateBooking(
+                                bookingId,
+                                request);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(
@@ -113,12 +117,13 @@ public class UserBookingController {
                         @PathVariable Long bookingId,
                         @Valid @RequestBody CancelBookingRequest request) {
 
-                BookingCancellationResponse response = bookingService.cancelBooking(bookingId, request);
+                BookingCancellationResponse response = bookingService.cancelBooking(
+                                bookingId,
+                                request);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(
                                                 response,
                                                 "Booking cancelled successfully."));
         }
-
 }

@@ -12,41 +12,45 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
-        @Bean
-        public CorsWebFilter corsWebFilter() {
+    @Bean
+    public CorsWebFilter corsWebFilter() {
 
-                CorsConfiguration config = new CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
 
-                config.setAllowedOrigins(
-                                List.of(
-                                                "http://localhost:5173"));
+        config.setAllowedOrigins(
+                List.of("http://localhost:5173")
+        );
 
-                config.setAllowedMethods(
-                                List.of(
-                                                "GET",
-                                                "POST",
-                                                "PUT",
-                                                "DELETE",
-                                                "OPTIONS"));
+        config.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
 
-                config.setAllowedHeaders(
-                                List.of("*"));
+        config.setAllowedHeaders(
+                List.of("*")
+        );
 
-                config.setExposedHeaders(
-                                List.of(
-                                                "Authorization"));
+        config.setExposedHeaders(
+                List.of("Authorization")
+        );
 
-                config.setAllowCredentials(true);
+        config.setAllowCredentials(true);
 
-                config.setMaxAge(3600L);
+        config.setMaxAge(3600L);
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
 
-                source.registerCorsConfiguration(
-                                "/**",
-                                config);
+        source.registerCorsConfiguration(
+                "/**",
+                config
+        );
 
-                return new CorsWebFilter(source);
-        }
-
+        return new CorsWebFilter(source);
+    }
 }

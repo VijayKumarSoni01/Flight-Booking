@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.project.bookingmanagement.entity.Booking;
@@ -27,7 +29,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // User Booking Queries
     // ==========================
 
-    List<Booking> findByUserId(Long userId);
+    Page<Booking> findByUserId(
+        Long userId,
+        Pageable pageable);
 
     List<Booking> findByUserIdOrderByBookingDateDesc(Long userId);
 

@@ -1,4 +1,9 @@
 services:
+
+  # ============================================================
+  # MYSQL
+  # ============================================================
+
   mysql:
     image: mysql:8.4
     container_name: mysql
@@ -24,6 +29,11 @@ services:
       timeout: 5s
       retries: 10
 
+
+  # ============================================================
+  # USER MANAGEMENT
+  # ============================================================
+
   user-management:
     build:
       context: ./usermanagment
@@ -42,6 +52,11 @@ services:
 
     environment:
       SPRING_PROFILES_ACTIVE: docker
+
+
+  # ============================================================
+  # FLIGHT MANAGEMENT
+  # ============================================================
 
   flight-management:
     build:
@@ -62,6 +77,11 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
 
+
+  # ============================================================
+  # BOOKING MANAGEMENT
+  # ============================================================
+
   booking-management:
     build:
       context: ./bookingmanagement
@@ -81,6 +101,37 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
 
+
+  # ============================================================
+  # PAYMENT MANAGEMENT
+  # ============================================================
+
+  payment-management:
+    build:
+      context: ./payment
+
+    container_name: payment-management
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      booking-management:
+        condition: service_started
+
+    ports:
+      - "8084:8084"
+
+    env_file:
+      - ./payment/.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+
+  # ============================================================
+  # API GATEWAY
+  # ============================================================
+
   api-gateway:
     build:
       context: ./apigateway
@@ -94,6 +145,8 @@ services:
         condition: service_started
       booking-management:
         condition: service_started
+      payment-management:
+        condition: service_started
 
     ports:
       - "8080:8080"
@@ -103,6 +156,11 @@ services:
 
     environment:
       SPRING_PROFILES_ACTIVE: docker
+
+
+# ==============================================================
+# VOLUMES
+# ==============================================================
 
 volumes:
   mysql_data:

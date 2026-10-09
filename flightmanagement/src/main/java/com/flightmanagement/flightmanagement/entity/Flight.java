@@ -2,6 +2,7 @@ package com.flightmanagement.flightmanagement.entity;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.flightmanagement.flightmanagement.enums.CurrencyCode;
@@ -33,14 +34,26 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "flights", indexes = {
+@Table(
+        name = "flights",
+        indexes = {
 
-        @Index(name = "idx_flight_number", columnList = "flightNumber"),
+                @Index(
+                        name = "idx_flight_number",
+                        columnList = "flightNumber"
+                ),
 
-        @Index(name = "idx_departure_time", columnList = "departureTime"),
+                @Index(
+                        name = "idx_departure_time",
+                        columnList = "departureTime"
+                ),
 
-        @Index(name = "idx_route", columnList = "origin_airport_id,destination_airport_id")
-})
+                @Index(
+                        name = "idx_route",
+                        columnList = "origin_airport_id,destination_airport_id"
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -52,30 +65,57 @@ public class Flight {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    //  * BASIC FLIGHT INFORMATION
+
     @Column(nullable = false, length = 10)
     private String flightNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "airline_id", nullable = false)
+    @JoinColumn(
+            name = "airline_id",
+            nullable = false
+    )
     private Airline airline;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "origin_airport_id", nullable = false)
+    @JoinColumn(
+            name = "origin_airport_id",
+            nullable = false
+    )
     private Airport originAirport;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "destination_airport_id", nullable = false)
+    @JoinColumn(
+            name = "destination_airport_id",
+            nullable = false
+    )
     private Airport destinationAirport;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "aircraft_id", nullable = false)
+    @JoinColumn(
+            name = "aircraft_id",
+            nullable = false
+    )
     private Aircraft aircraft;
 
-    @OneToMany(mappedBy = "flight", fetch = FetchType.LAZY)
+    //  * FARES
+    @OneToMany(
+            mappedBy = "flight",
+            fetch = FetchType.LAZY
+    )
     private List<FlightFare> flightFares;
 
-    @OneToMany(mappedBy = "flight", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    //  * BAGGAGE POLICIES
+
+    @OneToMany(
+            mappedBy = "flight",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<BaggagePolicy> baggagePolicies;
+
+    //  * FLIGHT TYPE & STATUS
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -86,13 +126,17 @@ public class Flight {
     @Builder.Default
     private FlightStatus status = FlightStatus.SCHEDULED;
 
-    /*
-     * ADD THIS
-     */
+    //  * CURRENCY
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(
+            nullable = false,
+            length = 10
+    )
     @Builder.Default
     private CurrencyCode currency = CurrencyCode.INR;
+
+    //  * FLIGHT TIMING
 
     @Column(nullable = false)
     private LocalDateTime departureTime;
@@ -103,20 +147,51 @@ public class Flight {
     @Column(nullable = false)
     private Integer durationMinutes;
 
+    //  * TERMINALS
+
     @Column(length = 20)
     private String departureTerminal;
 
     @Column(length = 20)
     private String arrivalTerminal;
 
-    @Column(nullable = false, updatable = false)
+    //  * AUDIT FIELDS
+
+    @Column(
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+
+    //  * OPTIMISTIC LOCKING
+
+
     @Version
     private Long version;
+
+    /*
+     * ===============================
+     * FLIGHT SCHEDULES
+     *
+     * One Flight can have
+     * multiple schedules.
+     * ===============================
+     */
+
+    @OneToMany(
+            mappedBy = "flight",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<FlightSchedule> schedules = new ArrayList<>();
+
+    //  * PRE PERSIST
 
     @PrePersist
     public void onCreate() {
@@ -129,17 +204,20 @@ public class Flight {
 
         this.updatedAt = now;
 
-        this.durationMinutes = (int) Duration.between(
-                departureTime,
-                arrivalTime)
-                .toMinutes();
+        this.durationMinutes =
+                (int) Duration.between(
+                        departureTime,
+                        arrivalTime
+                ).toMinutes();
 
         if (this.currency == null) {
 
             this.currency = CurrencyCode.INR;
         }
-
     }
+
+
+    //  * PRE UPDATE
 
     @PreUpdate
     public void onUpdate() {
@@ -148,35 +226,40 @@ public class Flight {
 
         this.updatedAt = LocalDateTime.now();
 
-        this.durationMinutes = (int) Duration.between(
-                departureTime,
-                arrivalTime)
-                .toMinutes();
-
+        this.durationMinutes =
+                (int) Duration.between(
+                        departureTime,
+                        arrivalTime
+                ).toMinutes();
     }
+
+    /*
+     * ===============================
+     * VALIDATION
+     * ===============================
+     */
 
     private void validateTimes() {
 
         if (arrivalTime.isBefore(departureTime)) {
 
             throw new IllegalArgumentException(
-                    "Arrival time cannot be before departure time.");
+                    "Arrival time cannot be before departure time."
+            );
         }
 
         if (arrivalTime.equals(departureTime)) {
 
             throw new IllegalArgumentException(
-                    "Arrival time cannot be same as departure time.");
-
+                    "Arrival time cannot be same as departure time."
+            );
         }
 
         if (departureTime.isBefore(LocalDateTime.now())) {
 
             throw new IllegalArgumentException(
-                    "Departure time must be in future.");
-
+                    "Departure time must be in future."
+            );
         }
-
     }
-
 }

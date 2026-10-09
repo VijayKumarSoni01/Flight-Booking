@@ -52,7 +52,7 @@ function Navbar() {
 
           {user && (
             <NavLink
-              to="/bookings"
+              to="/my-bookings"
               className={({ isActive }) => (isActive ? "active-link" : "")}
             >
               My Bookings

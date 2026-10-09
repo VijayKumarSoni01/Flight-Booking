@@ -2,8 +2,8 @@ package com.flightmanagement.flightmanagement.dtos.requestDTOs;
 
 import java.util.List;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import com.flightmanagement.flightmanagement.enums.CabinClass;
+
 import lombok.*;
 
 @Getter
@@ -13,10 +13,12 @@ import lombok.*;
 @Builder
 public class SeatReservationReqDTO {
 
-    @NotNull
     private Long flightId;
 
-    @NotEmpty
+    private CabinClass cabinClass;
+
+    private Integer seatCount;
+
     private List<String> seatNumbers;
 
     private String bookingReference;

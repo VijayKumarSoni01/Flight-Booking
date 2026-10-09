@@ -4,6 +4,7 @@ import Home from "../pages/public/Home";
 import Login from "../pages/public/Login";
 import Register from "../pages/public/Register";
 import VerifyEmail from "../pages/public/VerifyEmail";
+import MyBookings from "../pages/booking/MyBookings";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
 
@@ -22,9 +23,10 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* =================
-      PUBLIC
-================= */}
+            PUBLIC
+        ================= */}
 
         <Route
           path="/"
@@ -63,8 +65,8 @@ function AppRoutes() {
         />
 
         {/* =================
-      FLIGHTS
-================= */}
+            FLIGHTS
+        ================= */}
 
         <Route
           path="/flights"
@@ -85,8 +87,8 @@ function AppRoutes() {
         />
 
         {/* =================
-      BOOKING FLOW
-================= */}
+            BOOKING FLOW
+        ================= */}
 
         <Route
           path="/booking"
@@ -120,6 +122,22 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* =================
+            MY BOOKINGS
+        ================= */}
+
+        <Route
+          path="/my-bookings"
+          element={
+            <ProtectedRoute>
+              <PublicLayout>
+                <MyBookings />
+              </PublicLayout>
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
     </BrowserRouter>
   );

@@ -54,7 +54,6 @@ public class PaymentServiceImpl implements PaymentService {
                         CreatePaymentReqDTO request) {
 
                 log.info("Razorpay Key ID: {}", razorpayProperties.getKeyId());
-                log.info("Razorpay Key Secret: {}", razorpayProperties.getKeySecret());
 
                 log.info(
                                 "Creating payment for Booking Reference={}",

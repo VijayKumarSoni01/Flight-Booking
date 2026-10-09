@@ -38,6 +38,8 @@ public class BookingDetailsResponse {
 
     private LocalDate travelDate;
 
+    private List<String> seatNumbers;
+
     private Integer totalPassengers;
 
     private BigDecimal baseFare;

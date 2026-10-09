@@ -9,24 +9,28 @@ import com.flightmanagement.flightmanagement.enums.FlightStatus;
 
 public interface FlightService {
 
-    FlightResDTO createFlight(FlightReqDTO request);
+        FlightResDTO createFlight(FlightReqDTO request);
 
-    FlightResDTO getFlightById(Long id);
+        FlightResDTO getFlightById(Long id);
 
-    List<FlightResDTO> getAllFlights();
+        List<FlightResDTO> getAllFlights();
 
-    List<FlightResDTO> searchFlights(
-            Long originAirportId,
-            Long destinationAirportId,
-            LocalDate departureDate);
+        List<FlightResDTO> searchFlights(
+                        Long originAirportId,
+                        Long destinationAirportId,
+                        LocalDate departureDate);
 
-    FlightResDTO updateFlight(Long id, FlightReqDTO request);
-    
-    Boolean validateFlight(Long flightId);
+        FlightResDTO updateFlight(Long id, FlightReqDTO request);
 
-    FlightResDTO updateFlightStatus(
-            Long id,
-            FlightStatus status);
+        Boolean validateFlight(Long flightId);
 
-    void deleteFlight(Long id);
+        FlightResDTO updateFlightStatus(
+                        Long id,
+                        FlightStatus status);
+
+        void deleteFlight(Long id);
+
+        FlightResDTO getFlightInstanceById(Long flightInstanceId);
+
+        Boolean validateFlightInstance(Long flightInstanceId);
 }
